@@ -14,7 +14,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <h1 class="text-base font-bold tracking-wide text-indigo-400">🏡 Fondo Común</h1>
             <select id="select-mes-filtro" class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs px-2 py-1 rounded-full font-bold focus:outline-none">
-                </select>
+            </select>
         </div>
     </header>
 
@@ -118,11 +118,12 @@
     </div>
 
     <script>
-        // URL deducida de la firma de tu clave legacy ("ref": "wyqdlihwnhczonyspms")
+        // CONEXIÓN DEFINITIVA Y LIMPIA
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5cWRsaWh3bndoY3NvbnlzcG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjI2MzgsImV4cCI6MjA5NTgzODYzOH0.NktUWdcEzrZB3NeyBn1Fd9SkFs3z6JYpks4q0fFdqdM"; 
+        const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Cambié el nombre a "supabaseClient" para esquivar el error de caché del celular
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let tipoSeleccionado = 'Gasto';
         let mesSeleccionado = "";
@@ -166,7 +167,7 @@
 
         async function cargarTodo() {
             try {
-                let { data: presupuestos, error: errP } = await supabase.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
+                let { data: presupuestos, error: errP } = await supabaseClient.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
                 if(errP) throw errP;
 
                 const primerDia = `${mesSeleccionado}-01`;
@@ -174,7 +175,7 @@
                 let dSeg = new Date(parseInt(partes[0]), parseInt(partes[1]), 1);
                 const primerDiaSiguiente = dSeg.toISOString().slice(0, 7) + "-01";
 
-                let { data: movimientos, error: errM } = await supabase.from('movimientos').select('*').gte('fecha', primerDia).lt('fecha', primerDiaSiguiente).order('fecha', { ascending: false });
+                let { data: movimientos, error: errM } = await supabaseClient.from('movimientos').select('*').gte('fecha', primerDia).lt('fecha', primerDiaSiguiente).order('fecha', { ascending: false });
                 if(errM) throw errM;
 
                 movimientos = movimientos || []; presupuestos = presupuestos || [];
@@ -239,11 +240,10 @@
             }
         }
 
-        // GUARDAR NUEVO MOVIMIENTO
         document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fechaHoy = new Date().toISOString().split('T')[0];
-            const { error } = await supabase.from('movimientos').insert([{ 
+            const { error } = await supabaseClient.from('movimientos').insert([{ 
                 tipo: tipoSeleccionado, 
                 monto: parseFloat(document.getElementById('input-monto').value), 
                 categoria: document.getElementById('input-categoria').value, 
@@ -258,10 +258,9 @@
             }
         });
 
-        // ESTABLECER LÍMITES MENSUALES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const { error } = await supabase.from('presupuestos').insert([
+            const { error } = await supabaseClient.from('presupuestos').insert([
                 { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
                 { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
             ]);
