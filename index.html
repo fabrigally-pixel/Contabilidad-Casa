@@ -127,9 +127,9 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN COORDINADA CON TU ENLACE Y TU LLAVE PASADA
+        // CONFIGURACIÓN COORDINADA CON LA URL NUEVA Y TU LLAVE VALIDADAPUBLICABLE
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5cWRsaWh3bndoY3NvbnlzcG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjI2MzgsImV4cCI6MjA5NTgzODYzOH0.NktUWdcEzrZB3NeyBn1Fd9SkFs3z6JYpks4q0fFdqdM"; 
+        const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -250,7 +250,7 @@
             }
         }
 
-        // GUARDAR NUEVO MOVIMIENTO (ENVÍA LA FECHA EXPLÍCITA PARA EVITAR ERROR 400)
+        // GUARDAR NUEVO MOVIMIENTO
         document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fechaHoy = new Date().toISOString().split('T')[0];
@@ -269,12 +269,12 @@
             }
         });
 
-        // ESTABLECER LÍMITES MENSUALES
+        // ESTABLECER LÍMITES MENSUALES (CORREGIDO DE "category" A "categoria")
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
             const { error } = await supabase.from('presupuestos').insert([
-                { mes_anio: mesSeleccionado, category: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
-                { mes_anio: mesSeleccionado, category: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
+                { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
+                { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
             ]);
 
             if (error) {
