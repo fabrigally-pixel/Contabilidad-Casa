@@ -41,7 +41,6 @@
                 <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">Límites y Alertas</h2>
                 <button id="btn-config-limite" class="text-xs font-bold text-indigo-400 hover:underline hidden"><i class="fa-solid fa-gear mr-1"></i>Setear Topes</button>
             </div>
-            
             <div id="contenedor-presupuestos" class="space-y-3">
                 <p class="text-sm text-gray-500 italic pl-1">Cargando cuentas...</p>
             </div>
@@ -55,8 +54,7 @@
 
         <section id="seccion-resumen" class="hidden space-y-3 pt-2">
             <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black pl-1">Historial del Mes Seleccionado</h2>
-            <div id="lista-movimientos" class="space-y-2">
-                </div>
+            <div id="lista-movimientos" class="space-y-2"></div>
         </section>
 
     </main>
@@ -71,20 +69,15 @@
                 <h3 class="text-base font-bold text-white">Nuevo Registro</h3>
                 <button id="btn-cerrar-modal" class="text-gray-400 text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
             <form id="form-movimiento" class="space-y-4">
-                <div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="btn-tipo-gasto" class="py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center">Gasto</button>
-                        <button type="button" id="btn-tipo-ingreso" class="py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center">Ingreso</button>
-                    </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-tipo-gasto" class="py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center">Gasto</button>
+                    <button type="button" id="btn-tipo-ingreso" class="py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center">Ingreso</button>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Monto ($)</label>
                     <input type="number" id="input-monto" required inputmode="decimal" placeholder="0" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-lg font-bold text-white focus:outline-none">
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Categoría</label>
                     <select id="input-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
@@ -95,12 +88,10 @@
                         <option value="Otros">💡 Otros</option>
                     </select>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Nota / Detalle corto</label>
-                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Farmacia, Nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
+                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
                 </div>
-
                 <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Guardar Registro</button>
             </form>
         </div>
@@ -127,7 +118,7 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN COORDINADA CON LA URL NUEVA Y TU LLAVE VALIDADAPUBLICABLE
+        // Configuración unificada con clave publicable limpia
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
         const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
@@ -136,7 +127,6 @@
         let tipoSeleccionado = 'Gasto';
         let mesSeleccionado = "";
 
-        // Inicializar el Selector de Meses
         function inicializarSelectorMeses() {
             const selector = document.getElementById('select-mes-filtro');
             const hoy = new Date();
@@ -174,7 +164,6 @@
 
         const fMoneda = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
 
-        // LEER INFORMACIÓN DESDE SUPABASE
         async function cargarTodo() {
             try {
                 let { data: presupuestos, error: errP } = await supabase.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
@@ -246,7 +235,7 @@
                 }
             } catch (error) {
                 console.error("Error en Supabase:", error);
-                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de Permisos/Conexión: ${error.message || error}</p>`;
+                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
             }
         }
 
@@ -269,7 +258,7 @@
             }
         });
 
-        // ESTABLECER LÍMITES MENSUALES (CORREGIDO DE "category" A "categoria")
+        // ESTABLECER LÍMITES MENSUALES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
             const { error } = await supabase.from('presupuestos').insert([
