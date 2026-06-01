@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuestra Contabilidad</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link class="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans min-h-screen pb-24">
@@ -39,7 +39,9 @@
         <section class="space-y-4">
             <div class="flex justify-between items-center pl-1">
                 <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">Límites y Alertas</h2>
-                <button id="btn-config-limite" class="text-xs font-bold text-indigo-400 hover:underline hidden"><i class="fa-solid fa-gear mr-1"></i>Setear Topes</button>
+                <button id="btn-config-limite" class="text-xs font-bold text-indigo-400 hover:underline">
+                    <i class="fa-solid fa-plus mr-1"></i>Agregar Tope
+                </button>
             </div>
             <div id="contenedor-presupuestos" class="space-y-3">
                 <p class="text-sm text-gray-500 italic pl-1">Cargando cuentas...</p>
@@ -100,25 +102,24 @@
     <div id="modal-config" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
         <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
             <div class="flex justify-between items-center border-b border-gray-700 pb-2">
-                <h3 class="text-base font-bold text-white">Definir Límites del Mes</h3>
+                <h3 class="text-base font-bold text-white">Agregar Límite de Gasto</h3>
                 <button id="btn-cerrar-config" class="text-gray-400 text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="form-config" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-1">🏠 Tope Gasto de Casa ($)</label>
-                    <input type="number" id="cfg-casa" required placeholder="Ej: 400000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Nombre del Límite / Categoría</label>
+                    <input type="text" id="cfg-categoria" required placeholder="Ej: Gasto de Casa, Combustible, Salidas" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-1">🚗 Tope Combustible ($)</label>
-                    <input type="number" id="cfg-nafta" required placeholder="Ej: 80000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Monto Máximo Mensual ($)</label>
+                    <input type="number" id="cfg-monto" required placeholder="Ej: 150000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Establecer Límites</button>
+                <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Establecer Límite</button>
             </form>
         </div>
     </div>
 
     <script>
-        // CONEXIÓN DEFINITIVA Y LIMPIA
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
         const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
@@ -194,14 +195,12 @@
                 contenedorPre.innerHTML = '';
 
                 if (presupuestos.length === 0) {
-                    document.getElementById('btn-config-limite').classList.remove('hidden');
                     contenedorPre.innerHTML = `
                         <div class="bg-gray-800/40 border border-dashed border-gray-700 rounded-2xl p-6 text-center text-sm text-gray-400">
                             <p class="mb-2">No hay topes configurados para este mes.</p>
                             <button onclick="document.getElementById('modal-config').classList.replace('hidden', 'flex')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold px-3 py-1.5 rounded-xl text-xs"><i class="fa-solid fa-plus mr-1"></i> Establecer límites ahora</button>
                         </div>`;
                 } else {
-                    document.getElementById('btn-config-limite').classList.add('hidden');
                     presupuestos.forEach(p => {
                         const totalGastado = gastosPorCategoria[p.categoria] || 0;
                         const limite = parseFloat(p.limite); const restante = limite - totalGastado;
@@ -211,7 +210,15 @@
 
                         contenedorPre.innerHTML += `
                             <div class="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-sm space-y-1.5">
-                                <div class="flex justify-between items-center text-xs text-gray-400"><span class="font-bold text-gray-200">${p.categoria}</span><span>Tope: ${fMoneda(limite)}</span></div>
+                                <div class="flex justify-between items-center text-xs text-gray-400">
+                                    <span class="font-bold text-gray-200">${p.categoria}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span>Tope: ${fMoneda(limite)}</span>
+                                        <button onclick="borrarPresupuesto('${p.id}')" class="text-gray-500 hover:text-red-400 p-1 active:scale-90 transition-transform" title="Borrar tope">
+                                            <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="flex justify-between items-baseline"><span class="text-2xl font-black text-white">${fMoneda(totalGastado)}</span></div>
                                 <div class="text-xs py-2 rounded-xl border ${colorAlerta} mt-1 text-center font-medium">${textoAlerta}</div>
                             </div>`;
@@ -244,14 +251,25 @@
             }
         }
 
-        // FUNCIÓN NUEVA PARA BORRAR MOVIMIENTOS
         window.borrarMovimiento = async function(id) {
             if (confirm("¿Estás seguro que querés borrar este registro?")) {
                 const { error } = await supabaseClient.from('movimientos').delete().eq('id', id);
                 if (error) {
                     alert("Error al borrar: " + error.message);
                 } else {
-                    cargarTodo(); // Recargamos para que se actualicen todos los números al instante
+                    cargarTodo();
+                }
+            }
+        };
+
+        // FUNCIÓN NUEVA PARA BORRAR TOPES / LÍMITES INDIVIDUALMENTE
+        window.borrarPresupuesto = async function(id) {
+            if (confirm("¿Estás seguro que querés borrar este límite/tope?")) {
+                const { error } = await supabaseClient.from('presupuestos').delete().eq('id', id);
+                if (error) {
+                    alert("Error al borrar el límite: " + error.message);
+                } else {
+                    cargarTodo();
                 }
             }
         };
@@ -274,15 +292,18 @@
             }
         });
 
+        // NUEVA LÓGICA DE AGREGADO DE TOPES DINÁMICOS INDIVIDUALES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const categoriaTope = document.getElementById('cfg-categoria').value;
+            const montoTope = parseFloat(document.getElementById('cfg-monto').value);
+
             const { error } = await supabaseClient.from('presupuestos').insert([
-                { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
-                { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
+                { mes_anio: mesSeleccionado, categoria: categoriaTope, limite: montoTope }
             ]);
 
             if (error) {
-                alert("Error al guardar límites: " + error.message);
+                alert("Error al guardar límite: " + error.message);
             } else {
                 e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
             }
