@@ -122,7 +122,6 @@
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
         const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
-        // Cambié el nombre a "supabaseClient" para esquivar el error de caché del celular
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let tipoSeleccionado = 'Gasto';
@@ -230,7 +229,12 @@
                                     <div class="w-8 h-8 rounded-xl bg-gray-700 flex items-center justify-center text-xs"><i class="fa-solid ${icon}"></i></div>
                                     <div><p class="font-bold text-gray-200">${m.detalle || m.categoria}</p><p class="text-[10px] text-gray-500">${m.categoria} • ${m.fecha}</p></div>
                                 </div>
-                                <p class="font-bold text-sm ${m.tipo === 'Ingreso' ? 'text-green-400' : 'text-gray-200'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fMoneda(m.monto)}</p>
+                                <div class="flex items-center gap-3">
+                                    <p class="font-bold text-sm ${m.tipo === 'Ingreso' ? 'text-green-400' : 'text-gray-200'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fMoneda(m.monto)}</p>
+                                    <button onclick="borrarMovimiento('${m.id}')" class="text-gray-500 hover:text-red-400 p-2 active:scale-90 transition-transform" title="Borrar registro">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
                             </div>`;
                     });
                 }
@@ -239,6 +243,18 @@
                 document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
             }
         }
+
+        // FUNCIÓN NUEVA PARA BORRAR MOVIMIENTOS
+        window.borrarMovimiento = async function(id) {
+            if (confirm("¿Estás seguro que querés borrar este registro?")) {
+                const { error } = await supabaseClient.from('movimientos').delete().eq('id', id);
+                if (error) {
+                    alert("Error al borrar: " + error.message);
+                } else {
+                    cargarTodo(); // Recargamos para que se actualicen todos los números al instante
+                }
+            }
+        };
 
         document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
             e.preventDefault();
