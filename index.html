@@ -127,9 +127,9 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN 100% CORREGIDA CON ENTORNO NUEVO
+        // CONFIGURACIÓN COORDINADA CON TU ENLACE Y TU LLAVE PASADA
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5cWRsaWh3bndoY3NvbnlzcG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjI2MzgsImV4cCI6MjA5NTgzODYzOH0.NktUWdcEzrZB3NeyBn1Fd9SkFs3z6JYpks4q0fFdqdM"; 
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -177,13 +177,17 @@
         // LEER INFORMACIÓN DESDE SUPABASE
         async function cargarTodo() {
             try {
-                let { data: presupuestos } = await supabase.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
+                let { data: presupuestos, error: errP } = await supabase.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
+                if(errP) throw errP;
+
                 const primerDia = `${mesSeleccionado}-01`;
                 let partes = mesSeleccionado.split('-');
                 let dSeg = new Date(parseInt(partes[0]), parseInt(partes[1]), 1);
                 const primerDiaSiguiente = dSeg.toISOString().slice(0, 7) + "-01";
 
-                let { data: movimientos } = await supabase.from('movimientos').select('*').gte('fecha', primerDia).lt('fecha', primerDiaSiguiente).order('fecha', { ascending: false });
+                let { data: movimientos, error: errM } = await supabase.from('movimientos').select('*').gte('fecha', primerDia).lt('fecha', primerDiaSiguiente).order('fecha', { ascending: false });
+                if(errM) throw errM;
+
                 movimientos = movimientos || []; presupuestos = presupuestos || [];
 
                 let ingresos = 0, gastos = 0, gastosPorCategoria = {};
@@ -241,46 +245,43 @@
                     });
                 }
             } catch (error) {
-                console.error("Error al renderizar la interfaz:", error);
-                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de sincronización.</p>`;
+                console.error("Error en Supabase:", error);
+                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de Permisos/Conexión: ${error.message || error}</p>`;
             }
         }
 
         // GUARDAR NUEVO MOVIMIENTO (ENVÍA LA FECHA EXPLÍCITA PARA EVITAR ERROR 400)
         document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const fechaHoy = new Date().toISOString().split('T')[0];
-            const montoInput = parseFloat(document.getElementById('input-monto').value);
-            const categoriaInput = document.getElementById('input-categoria').value;
-            const detalleInput = document.getElementById('input-detalle').value;
-
-            const { data, error } = await supabase.from('movimientos').insert([{ 
+            const { error } = await supabase.from('movimientos').insert([{ 
                 tipo: tipoSeleccionado, 
-                monto: montoInput, 
-                categoria: categoriaInput, 
-                detalle: detalleInput,
+                monto: parseFloat(document.getElementById('input-monto').value), 
+                categoria: document.getElementById('input-categoria').value, 
+                detalle: document.getElementById('input-detalle').value,
                 fecha: fechaHoy
             }]);
 
             if (error) {
-                console.error("Error de inserción:", error);
-                alert("Error de Supabase: " + error.message);
+                alert("Error al guardar: " + error.message);
             } else {
-                e.target.reset();
-                modalCarga.classList.replace('flex', 'hidden');
-                cargarTodo();
+                e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
             }
         });
 
         // ESTABLECER LÍMITES MENSUALES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
-            await supabase.from('presupuestos').insert([
-                { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
-                { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
+            const { error } = await supabase.from('presupuestos').insert([
+                { mes_anio: mesSeleccionado, category: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
+                { mes_anio: mesSeleccionado, category: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
             ]);
-            e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
+
+            if (error) {
+                alert("Error al guardar límites: " + error.message);
+            } else {
+                e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
+            }
         });
 
         window.addEventListener('DOMContentLoaded', () => { inicializarSelectorMeses(); cargarTodo(); });
