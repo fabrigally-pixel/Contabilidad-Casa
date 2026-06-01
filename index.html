@@ -88,7 +88,7 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Categoría</label>
                     <select id="input-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
-                        <option value="Gasto de Casa">🏠 Gasto de Casa (Comida/Varios)</option>
+                        <option value="Gasto de Casa">🏠 Gasto de Casa</option>
                         <option value="Combustible">🚗 Combustible</option>
                         <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
                         <option value="Sueldo">💰 Ingreso / Sueldo</option>
@@ -135,19 +135,17 @@
         let tipoSeleccionado = 'Gasto';
         let mesSeleccionado = "";
 
-        // Inicializar el Selector de Meses (Muestra los últimos 4 meses y los próximos 2 para poder planificar)
+        // Inicializar el Selector de Meses
         function inicializarSelectorMeses() {
             const selector = document.getElementById('select-mes-filtro');
             const hoy = new Date();
             const añoActual = hoy.getFullYear();
             const mesActualIdx = hoy.getMonth();
 
-            // Setear el mes en formato YYYY-MM por defecto
             mesSeleccionado = hoy.toISOString().slice(0, 7);
 
             const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-            // Construir opciones relativas (-4 meses atrás hasta +2 adelante)
             for (let i = -4; i <= 2; i++) {
                 let d = new Date(añoActual, mesActualIdx + i, 1);
                 let val = d.toISOString().slice(0, 7);
@@ -166,7 +164,6 @@
             });
         }
 
-        // Lógica de Modales y cambio de botones visuales
         const modalCarga = document.getElementById('modal-carga');
         const modalConfig = document.getElementById('modal-config');
         const seccionResumen = document.getElementById('seccion-resumen');
@@ -199,20 +196,16 @@
                 '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Resumen';
         });
 
-        // Formateador de moneda de Argentina ($ sin decimales molestos)
         const fMoneda = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
 
         // LEER DATOS DESDE LA NUBE
         async function cargarTodo() {
-            // 1. Traer límites de la tabla 'presupuestos' del mes en pantalla
-            let { data: presupuestos } = await supabase
+            let { data: presupuestos, error: errP } = await supabase
                 .from('presupuestos')
                 .select('*')
                 .eq('mes_anio', mesSeleccionado);
 
-            // 2. Traer movimientos de ese mes entero
             const primerDia = `${mesSeleccionado}-01`;
-            // Calculamos el primer día del mes siguiente para poner la barrera de corte
             let partes = mesSeleccionado.split('-');
             let año = parseInt(partes[0]);
             let mes = parseInt(partes[1]);
@@ -220,7 +213,7 @@
             let siguienteAño = mes === 12 ? año + 1 : año;
             const primerDiaSiguiente = `${siguienteAño}-${String(siguienteMes).padStart(2, '0')}-01`;
 
-            let { data: movimientos } = await supabase
+            let { data: movimientos, error: errM } = await supabase
                 .from('movimientos')
                 .select('*')
                 .gte('fecha', primerDia)
@@ -230,7 +223,6 @@
             movimientos = movimientos || [];
             presupuestos = presupuestos || [];
 
-            // Procesar números generales
             let ingresos = 0, gastos = 0;
             let gastosPorCategoria = {};
 
@@ -244,17 +236,14 @@
                 }
             });
 
-            // Volcar a los números grandes principales
             document.getElementById('txt-total-ingresos').innerText = fMoneda(ingresos);
             document.getElementById('txt-total-gastos').innerText = fMoneda(gastos);
             document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos);
 
-            // Pintar los Casilleros Cortos de Límites
             const contenedorPre = document.getElementById('contenedor-presupuestos');
             contenedorPre.innerHTML = '';
 
             if (presupuestos.length === 0) {
-                // Si el mes está en blanco, habilitamos el botón rápido para inicializarlo
                 document.getElementById('btn-config-limite').classList.remove('hidden');
                 contenedorPre.innerHTML = `
                     <div class="bg-gray-800/40 border border-dashed border-gray-700 rounded-2xl p-6 text-center text-sm text-gray-400">
@@ -299,7 +288,6 @@
                 });
             }
 
-            // Pintar Historial de Movimientos Detallado
             const listaHTML = document.getElementById('lista-movimientos');
             listaHTML.innerHTML = '';
             
@@ -345,13 +333,12 @@
             cargarTodo();
         });
 
-        // ESTABLECER LÍMITES PARA UN MES DESDE LA APP
+        // ESTABLECER LÍMITES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
             const limiteCasa = parseFloat(document.getElementById('cfg-casa').value);
             const limiteNafta = parseFloat(document.getElementById('cfg-nafta').value);
 
-            // Insertamos los dos topes en lote en la tabla de presupuestos
             await supabase.from('presupuestos').insert([
                 { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: limiteCasa },
                 { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: limiteNafta }
@@ -362,7 +349,6 @@
             cargarTodo();
         });
 
-        // Ejecución inicial al abrir la aplicación
         window.addEventListener('DOMContentLoaded', () => {
             inicializarSelectorMeses();
             cargarTodo();
