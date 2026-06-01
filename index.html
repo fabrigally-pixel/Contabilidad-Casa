@@ -4,29 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuestra Contabilidad</title>
-    <!-- Tailwind CSS para diseño móvil e intuitivo -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Iconos para la interfaz móvil -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Librería Oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans min-h-screen pb-24">
 
-    <!-- Encabezado Principal -->
     <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 shadow-lg">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <h1 class="text-base font-bold tracking-wide text-indigo-400">🏡 Fondo Común</h1>
-            <!-- Selector dinámico de mes arriba a la derecha -->
             <select id="select-mes-filtro" class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs px-2 py-1 rounded-full font-bold focus:outline-none">
-                <!-- Se llena automáticamente con JS -->
-            </select>
+                </select>
         </div>
     </header>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
 
-        <!-- 1. ESTADO GENERAL (Ingresos, Gastos y Disponible) -->
         <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
             <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
             <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
@@ -43,7 +36,6 @@
             </div>
         </section>
 
-        <!-- 2. CASILLEROS CORTITOS DE TOPES (Dinámicos con Semáforo) -->
         <section class="space-y-4">
             <div class="flex justify-between items-center pl-1">
                 <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">Límites y Alertas</h2>
@@ -51,34 +43,28 @@
             </div>
             
             <div id="contenedor-presupuestos" class="space-y-3">
-                <!-- Se renderiza desde Supabase -->
                 <p class="text-sm text-gray-500 italic pl-1">Cargando cuentas...</p>
             </div>
         </section>
 
-        <!-- Botón para alternar pantallas (Ver Resumen completo) -->
         <div class="text-center">
             <button id="btn-toggle-resumen" class="text-xs font-bold text-indigo-400 bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl transition active:bg-gray-700 shadow-sm">
                 <i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo
             </button>
         </div>
 
-        <!-- 3. DETALLE COMPLETO (Se despliega abajo de la visual principal) -->
         <section id="seccion-resumen" class="hidden space-y-3 pt-2">
             <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black pl-1">Historial del Mes Seleccionado</h2>
             <div id="lista-movimientos" class="space-y-2">
-                <!-- Lista de gastos individuales -->
-            </div>
+                </div>
         </section>
 
     </main>
 
-    <!-- 4. BOTÓN FLOTANTE MÓVIL PARA REGISTRO RÁPIDO -->
     <button id="btn-abrir-modal" class="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-90 transition-transform z-20">
         <i class="fa-solid fa-plus"></i>
     </button>
 
-    <!-- MODAL 1: REGISTRAR UN INGRESO O GASTO -->
     <div id="modal-carga" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
         <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
             <div class="flex justify-between items-center border-b border-gray-700 pb-2">
@@ -120,7 +106,6 @@
         </div>
     </div>
 
-    <!-- MODAL 2: CONFIGURAR TOPES DE UN MES NUEVO -->
     <div id="modal-config" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
         <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
             <div class="flex justify-between items-center border-b border-gray-700 pb-2">
@@ -141,9 +126,8 @@
         </div>
     </div>
 
-    <!-- ENLACE DIRECTO AUTOMÁTICO A TU PROYECTO -->
     <script>
-        // DATOS 100% REALES ACTUALIZADOS Y COORDINADOS
+        // CONFIGURACIÓN 100% CORREGIDA CON ENTORNO NUEVO
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
         const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
@@ -190,6 +174,7 @@
 
         const fMoneda = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
 
+        // LEER INFORMACIÓN DESDE SUPABASE
         async function cargarTodo() {
             try {
                 let { data: presupuestos } = await supabase.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
@@ -256,19 +241,45 @@
                     });
                 }
             } catch (error) {
-                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error en la conexión.</p>`;
+                console.error("Error al renderizar la interfaz:", error);
+                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de sincronización.</p>`;
             }
         }
 
+        // GUARDAR NUEVO MOVIMIENTO (ENVÍA LA FECHA EXPLÍCITA PARA EVITAR ERROR 400)
         document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
             e.preventDefault();
-            await supabase.from('movimientos').insert([{ tipo: tipoSeleccionado, monto: parseFloat(document.getElementById('input-monto').value), categoria: document.getElementById('input-categoria').value, detalle: document.getElementById('input-detalle').value }]);
-            e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
+            
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            const montoInput = parseFloat(document.getElementById('input-monto').value);
+            const categoriaInput = document.getElementById('input-categoria').value;
+            const detalleInput = document.getElementById('input-detalle').value;
+
+            const { data, error } = await supabase.from('movimientos').insert([{ 
+                tipo: tipoSeleccionado, 
+                monto: montoInput, 
+                categoria: categoriaInput, 
+                detalle: detalleInput,
+                fecha: fechaHoy
+            }]);
+
+            if (error) {
+                console.error("Error de inserción:", error);
+                alert("Error de Supabase: " + error.message);
+            } else {
+                e.target.reset();
+                modalCarga.classList.replace('flex', 'hidden');
+                cargarTodo();
+            }
         });
 
+        // ESTABLECER LÍMITES MENSUALES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
-            await supabase.from('presupuestos').insert([{ mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }]);
+            await supabase.from('presupuestos').insert([
+                { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, 
+                { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }
+            ]);
             e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
         });
 
