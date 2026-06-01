@@ -4,22 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuestra Contabilidad</title>
+    <!-- Tailwind CSS para diseño móvil e intuitivo -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconos para la interfaz móvil -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Librería Oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 font-sans min-h-screen pb-24">
 
+    <!-- Encabezado Principal -->
     <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 shadow-lg">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <h1 class="text-base font-bold tracking-wide text-indigo-400">🏡 Fondo Común</h1>
+            <!-- Selector dinámico de mes arriba a la derecha -->
             <select id="select-mes-filtro" class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs px-2 py-1 rounded-full font-bold focus:outline-none">
-                </select>
+                <!-- Se llena automáticamente con JS -->
+            </select>
         </div>
     </header>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
 
+        <!-- 1. ESTADO GENERAL (Ingresos, Gastos y Disponible) -->
         <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
             <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
             <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
@@ -36,6 +43,7 @@
             </div>
         </section>
 
+        <!-- 2. CASILLEROS CORTITOS DE TOPES (Dinámicos con Semáforo) -->
         <section class="space-y-4">
             <div class="flex justify-between items-center pl-1">
                 <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">Límites y Alertas</h2>
@@ -43,28 +51,34 @@
             </div>
             
             <div id="contenedor-presupuestos" class="space-y-3">
+                <!-- Se renderiza desde Supabase -->
                 <p class="text-sm text-gray-500 italic pl-1">Cargando cuentas...</p>
             </div>
         </section>
 
+        <!-- Botón para alternar pantallas (Ver Resumen completo) -->
         <div class="text-center">
             <button id="btn-toggle-resumen" class="text-xs font-bold text-indigo-400 bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl transition active:bg-gray-700 shadow-sm">
                 <i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo
             </button>
         </div>
 
+        <!-- 3. DETALLE COMPLETO (Se despliega abajo de la visual principal) -->
         <section id="seccion-resumen" class="hidden space-y-3 pt-2">
             <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black pl-1">Historial del Mes Seleccionado</h2>
             <div id="lista-movimientos" class="space-y-2">
-                </div>
+                <!-- Lista de gastos individuales -->
+            </div>
         </section>
 
     </main>
 
+    <!-- 4. BOTÓN FLOTANTE MÓVIL PARA REGISTRO RÁPIDO -->
     <button id="btn-abrir-modal" class="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-90 transition-transform z-20">
         <i class="fa-solid fa-plus"></i>
     </button>
 
+    <!-- MODAL 1: REGISTRAR UN INGRESO O GASTO -->
     <div id="modal-carga" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
         <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
             <div class="flex justify-between items-center border-b border-gray-700 pb-2">
@@ -82,12 +96,12 @@
 
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Monto ($)</label>
-                    <input type="number" id="input-monto" required inputmode="decimal" placeholder="0" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-lg font-bold text-white focus:outline-none focus:border-indigo-500">
+                    <input type="number" id="input-monto" required inputmode="decimal" placeholder="0" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-lg font-bold text-white focus:outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Categoría</label>
-                    <select id="input-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm">
+                    <select id="input-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
                         <option value="Gasto de Casa">🏠 Gasto de Casa</option>
                         <option value="Combustible">🚗 Combustible</option>
                         <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
@@ -98,14 +112,15 @@
 
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Nota / Detalle corto</label>
-                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Farmacia, Nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Farmacia, Nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
                 </div>
 
-                <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">Guardar Registro</button>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Guardar Registro</button>
             </form>
         </div>
     </div>
 
+    <!-- MODAL 2: CONFIGURAR TOPES DE UN MES NUEVO -->
     <div id="modal-config" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
         <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
             <div class="flex justify-between items-center border-b border-gray-700 pb-2">
@@ -115,21 +130,22 @@
             <form id="form-config" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">🏠 Tope Gasto de Casa ($)</label>
-                    <input type="number" id="cfg-casa" required placeholder="Ej: 400000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none focus:border-indigo-500">
+                    <input type="number" id="cfg-casa" required placeholder="Ej: 400000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">🚗 Tope Combustible ($)</label>
-                    <input type="number" id="cfg-nafta" required placeholder="Ej: 80000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none focus:border-indigo-500">
+                    <input type="number" id="cfg-nafta" required placeholder="Ej: 80000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg active:scale-95 transition-transform">Establecer Límites</button>
+                <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Establecer Límites</button>
             </form>
         </div>
     </div>
 
+    <!-- ENLACE DIRECTO AUTOMÁTICO A TU PROYECTO -->
     <script>
-        // CONFIGURACIÓN REAL CORREGIDA
+        // DATOS 100% REALES ACTUALIZADOS Y COORDINADOS
         const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5cWRsaWh3bndoY3NvbnlzcG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNjI2MzgsImV4cCI6MjA5NTgzODYzOH0.NktUWdcEzrZB3NeyBn1Fd9SkFs3z6JYpks4q0fFdqdM";
+        const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -140,29 +156,17 @@
         function inicializarSelectorMeses() {
             const selector = document.getElementById('select-mes-filtro');
             const hoy = new Date();
-            const añoActual = hoy.getFullYear();
-            const mesActualIdx = hoy.getMonth();
-
             mesSeleccionado = hoy.toISOString().slice(0, 7);
-
             const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
             for (let i = -4; i <= 2; i++) {
-                let d = new Date(añoActual, mesActualIdx + i, 1);
+                let d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
                 let val = d.toISOString().slice(0, 7);
-                let texto = `${nombresMeses[d.getMonth()]} ${d.getFullYear()}`;
-                
                 let opt = document.createElement('option');
-                opt.value = val;
-                opt.innerText = texto;
+                opt.value = val; opt.innerText = `${nombresMeses[d.getMonth()]} ${d.getFullYear()}`;
                 if (val === mesSeleccionado) opt.selected = true;
                 selector.appendChild(opt);
             }
-
-            selector.addEventListener('change', (e) => {
-                mesSeleccionado = e.target.value;
-                cargarTodo();
-            });
+            selector.addEventListener('change', (e) => { mesSeleccionado = e.target.value; cargarTodo(); });
         }
 
         const modalCarga = document.getElementById('modal-carga');
@@ -172,70 +176,36 @@
         document.getElementById('btn-abrir-modal').addEventListener('click', () => modalCarga.classList.replace('hidden', 'flex'));
         document.getElementById('btn-cerrar-modal').addEventListener('click', () => modalCarga.classList.replace('flex', 'hidden'));
         document.getElementById('btn-cerrar-config').addEventListener('click', () => modalConfig.classList.replace('flex', 'hidden'));
-        
         document.getElementById('btn-config-limite').addEventListener('click', () => modalConfig.classList.replace('hidden', 'flex'));
 
         const btnGasto = document.getElementById('btn-tipo-gasto');
         const btnIngreso = document.getElementById('btn-tipo-ingreso');
-        
-        btnGasto.addEventListener('click', () => {
-            tipoSeleccionado = 'Gasto';
-            btnGasto.className = "py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center";
-            btnIngreso.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center";
-        });
-
-        btnIngreso.addEventListener('click', () => {
-            tipoSeleccionado = 'Ingreso';
-            btnIngreso.className = "py-2.5 rounded-xl font-bold border border-green-500 bg-green-500/10 text-green-400 text-center";
-            btnGasto.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center";
-        });
+        btnGasto.addEventListener('click', () => { tipoSeleccionado = 'Gasto'; btnGasto.className = "py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center"; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
+        btnIngreso.addEventListener('click', () => { tipoSeleccionado = 'Ingreso'; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-green-500 bg-green-500/10 text-green-400 text-center"; btnGasto.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
 
         document.getElementById('btn-toggle-resumen').addEventListener('click', (e) => {
             seccionResumen.classList.toggle('hidden');
-            e.currentTarget.innerHTML = seccionResumen.classList.contains('hidden') ? 
-                '<i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo' : 
-                '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Resumen';
+            e.currentTarget.innerHTML = seccionResumen.classList.contains('hidden') ? '<i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo' : '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Resumen';
         });
 
         const fMoneda = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
 
-        // LEER DATOS DESDE LA NUBE
         async function cargarTodo() {
             try {
-                let { data: presupuestos, error: errP } = await supabase
-                    .from('presupuestos')
-                    .select('*')
-                    .eq('mes_anio', mesSeleccionado);
-
+                let { data: presupuestos } = await supabase.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
                 const primerDia = `${mesSeleccionado}-01`;
                 let partes = mesSeleccionado.split('-');
-                let año = parseInt(partes[0]);
-                let mes = parseInt(partes[1]);
-                let siguienteMes = mes === 12 ? 1 : mes + 1;
-                let siguienteAño = mes === 12 ? año + 1 : año;
-                const primerDiaSiguiente = `${siguienteAño}-${String(siguienteMes).padStart(2, '0')}-01`;
+                let dSeg = new Date(parseInt(partes[0]), parseInt(partes[1]), 1);
+                const primerDiaSiguiente = dSeg.toISOString().slice(0, 7) + "-01";
 
-                let { data: movimientos, error: errM } = await supabase
-                    .from('movimientos')
-                    .select('*')
-                    .gte('fecha', primerDia)
-                    .lt('fecha', primerDiaSiguiente)
-                    .order('fecha', { ascending: false });
+                let { data: movimientos } = await supabase.from('movimientos').select('*').gte('fecha', primerDia).lt('fecha', primerDiaSiguiente).order('fecha', { ascending: false });
+                movimientos = movimientos || []; presupuestos = presupuestos || [];
 
-                movimientos = movimientos || [];
-                presupuestos = presupuestos || [];
-
-                let ingresos = 0, gastos = 0;
-                let gastosPorCategoria = {};
-
+                let ingresos = 0, gastos = 0, gastosPorCategoria = {};
                 movimientos.forEach(m => {
                     const monto = parseFloat(m.monto);
-                    if (m.tipo === 'Ingreso') {
-                        ingresos += monto;
-                    } else {
-                        gastos += monto;
-                        gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
-                    }
+                    if (m.tipo === 'Ingreso') ingresos += monto;
+                    else { gastos += monto; gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto; }
                 });
 
                 document.getElementById('txt-total-ingresos').innerText = fMoneda(ingresos);
@@ -250,100 +220,59 @@
                     contenedorPre.innerHTML = `
                         <div class="bg-gray-800/40 border border-dashed border-gray-700 rounded-2xl p-6 text-center text-sm text-gray-400">
                             <p class="mb-2">No hay topes configurados para este mes.</p>
-                            <button onclick="document.getElementById('modal-config').classList.replace('hidden', 'flex')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold px-3 py-1.5 rounded-xl text-xs">
-                                <i class="fa-solid fa-plus mr-1"></i> Establecer límites ahora
-                            </button>
-                        </div>
-                    `;
+                            <button onclick="document.getElementById('modal-config').classList.replace('hidden', 'flex')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold px-3 py-1.5 rounded-xl text-xs"><i class="fa-solid fa-plus mr-1"></i> Establecer límites ahora</button>
+                        </div>`;
                 } else {
                     document.getElementById('btn-config-limite').classList.add('hidden');
                     presupuestos.forEach(p => {
                         const totalGastado = gastosPorCategoria[p.categoria] || 0;
-                        const limite = parseFloat(p.limite);
-                        const restante = limite - totalGastado;
-                        
-                        let colorAlerta = "bg-green-500/10 text-green-400 border-green-500/20";
-                        let textoAlerta = `Te quedan ${fMoneda(restante)}`;
-
-                        if (restante <= 0) {
-                            colorAlerta = "bg-red-500/20 text-red-400 border-red-500/40 font-black animate-pulse";
-                            textoAlerta = `⚠️ ¡Límite superado por ${fMoneda(Math.abs(restante))}!`;
-                        } else if (restante <= (limite * 0.15)) {
-                            colorAlerta = "bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold";
-                            textoAlerta = `⚠️ ¡Atención! Solo quedan ${fMoneda(restante)}`;
-                        }
+                        const limite = parseFloat(p.limite); const restante = limite - totalGastado;
+                        let colorAlerta = "bg-green-500/10 text-green-400 border-green-500/20", textoAlerta = `Te quedan ${fMoneda(restante)}`;
+                        if (restante <= 0) { colorAlerta = "bg-red-500/20 text-red-400 border-red-500/40 font-black animate-pulse"; textoAlerta = `⚠️ ¡Límite superado por ${fMoneda(Math.abs(restante))}!`; }
+                        else if (restante <= (limite * 0.15)) { colorAlerta = "bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold"; textoAlerta = `⚠️ ¡Atención! Solo quedan ${fMoneda(restante)}`; }
 
                         contenedorPre.innerHTML += `
                             <div class="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-sm space-y-1.5">
-                                <div class="flex justify-between items-center text-xs text-gray-400">
-                                    <span class="font-bold text-gray-200">${p.categoria}</span>
-                                    <span>Tope: ${fMoneda(limite)}</span>
-                                </div>
-                                <div class="flex justify-between items-baseline">
-                                    <span class="text-2xl font-black text-white">${fMoneda(totalGastado)}</span>
-                                </div>
-                                <div class="text-xs py-2 rounded-xl border ${colorAlerta} mt-1 text-center font-medium">
-                                    ${textoAlerta}
-                                </div>
-                            </div>
-                        `;
+                                <div class="flex justify-between items-center text-xs text-gray-400"><span class="font-bold text-gray-200">${p.categoria}</span><span>Tope: ${fMoneda(limite)}</span></div>
+                                <div class="flex justify-between items-baseline"><span class="text-2xl font-black text-white">${fMoneda(totalGastado)}</span></div>
+                                <div class="text-xs py-2 rounded-xl border ${colorAlerta} mt-1 text-center font-medium">${textoAlerta}</div>
+                            </div>`;
                     });
                 }
 
-                const listaHTML = document.getElementById('lista-movimientos');
-                listaHTML.innerHTML = '';
-                
-                if (movimientos.length === 0) {
-                    listaHTML.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">No hay movimientos cargados en este periodo.</p>`;
-                } else {
+                const listaHTML = document.getElementById('lista-movimientos'); listaHTML.innerHTML = '';
+                if (movimientos.length === 0) { listaHTML.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">No hay movimientos.</p>`; }
+                else {
                     movimientos.forEach(m => {
                         const icon = m.tipo === 'Ingreso' ? 'fa-arrow-trend-up text-green-400' : 'fa-basket-shopping text-red-400';
                         listaHTML.innerHTML += `
                             <div class="bg-gray-800/50 p-3 rounded-xl flex justify-between items-center border border-gray-700/50 text-xs">
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-xl bg-gray-700 flex items-center justify-center text-xs"><i class="fa-solid ${icon}"></i></div>
-                                    <div>
-                                        <p class="font-bold text-gray-200">${m.detalle || m.categoria}</p>
-                                        <p class="text-[10px] text-gray-500">${m.categoria} • ${m.fecha}</p>
-                                    </div>
+                                    <div><p class="font-bold text-gray-200">${m.detalle || m.categoria}</p><p class="text-[10px] text-gray-500">${m.categoria} • ${m.fecha}</p></div>
                                 </div>
-                                <p class="font-bold text-sm ${m.tipo === 'Ingreso' ? 'text-green-400' : 'text-gray-200'}">
-                                    ${m.tipo === 'Ingreso' ? '+' : '-'}${fMoneda(m.monto)}
-                                </p>
-                            </div>
-                        `;
+                                <p class="font-bold text-sm ${m.tipo === 'Ingreso' ? 'text-green-400' : 'text-gray-200'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fMoneda(m.monto)}</p>
+                            </div>`;
                     });
                 }
             } catch (error) {
-                console.error(error);
-                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de red en Supabase. Verificá los datos.</p>`;
+                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error en la conexión.</p>`;
             }
         }
 
-        // GUARDAR NUEVO MOVIMIENTO
         document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const monto = parseFloat(document.getElementById('input-monto').value);
-            const categoria = document.getElementById('input-categoria').value;
-            const detalle = document.getElementById('input-detalle').value;
-
-            await supabase.from('movimientos').insert([{ 
-                tipo: tipoSeleccionado, 
-                monto: monto, 
-                categoria: categoria, 
-                detalle: detalle 
-            }]);
-
-            e.target.reset();
-            modalCarga.classList.replace('flex', 'hidden');
-            cargarTodo();
+            await supabase.from('movimientos').insert([{ tipo: tipoSeleccionado, monto: parseFloat(document.getElementById('input-monto').value), categoria: document.getElementById('input-categoria').value, detalle: document.getElementById('input-detalle').value }]);
+            e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
         });
 
-        // ESTABLECER LÍMITES
         document.getElementById('form-config').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const limiteCasa = parseFloat(document.getElementById('cfg-casa').value);
-            const limiteNafta = parseFloat(document.getElementById('cfg-nafta').value);
+            await supabase.from('presupuestos').insert([{ mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: parseFloat(document.getElementById('cfg-casa').value) }, { mes_anio: mesSeleccionado, categoria: 'Combustible', limite: parseFloat(document.getElementById('cfg-nafta').value) }]);
+            e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
+        });
 
-            await supabase.from('presupuestos').insert([
-                { mes_anio: mesSeleccionado, categoria: 'Gasto de Casa', limite: limiteCasa }
+        window.addEventListener('DOMContentLoaded', () => { inicializarSelectorMeses(); cargarTodo(); });
+    </script>
+</body>
+</html>
