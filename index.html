@@ -24,14 +24,18 @@
             <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
             <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
             
-            <div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-700">
+            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-700">
                 <div>
-                    <p class="text-xs text-gray-400 font-medium">Ingresó</p>
-                    <p class="text-base font-bold text-green-400" id="txt-total-ingresos">$0</p>
+                    <p class="text-[11px] text-gray-400 font-medium">Ingresó</p>
+                    <p class="text-sm font-bold text-green-400 mt-0.5" id="txt-total-ingresos">$0</p>
                 </div>
                 <div class="border-l border-gray-700">
-                    <p class="text-xs text-gray-400 font-medium">Salió</p>
-                    <p class="text-base font-bold text-red-400" id="txt-total-gastos">$0</p>
+                    <p class="text-[11px] text-gray-400 font-medium">Salió</p>
+                    <p class="text-sm font-bold text-red-400 mt-0.5" id="txt-total-gastos">$0</p>
+                </div>
+                <div class="border-l border-gray-700">
+                    <p class="text-[11px] text-gray-400 font-medium">Ahorro</p>
+                    <p class="text-sm font-bold text-indigo-400 mt-0.5" id="txt-total-ahorros">$0</p>
                 </div>
             </div>
         </section>
@@ -86,13 +90,14 @@
                         <option value="Gasto de Casa">🏠 Gasto de Casa</option>
                         <option value="Combustible">🚗 Combustible</option>
                         <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
+                        <option value="Ahorro">🐷 Ahorro</option>
                         <option value="Sueldo">💰 Ingreso / Sueldo</option>
                         <option value="Otros">💡 Otros</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Nota / Detalle corto</label>
-                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
+                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Nafta, Guardado mes" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
                 </div>
                 <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Guardar Registro</button>
             </form>
@@ -107,8 +112,14 @@
             </div>
             <form id="form-config" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-1">Nombre del Límite / Categoría</label>
-                    <input type="text" id="cfg-categoria" required placeholder="Ej: Gasto de Casa, Combustible, Salidas" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Elegir Categoría del Límite</label>
+                    <select id="cfg-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
+                        <option value="Gasto de Casa">🏠 Gasto de Casa</option>
+                        <option value="Combustible">🚗 Combustible</option>
+                        <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
+                        <option value="Ahorro">🐷 Ahorro</option>
+                        <option value="Otros">💡 Otros</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-400 mb-1">Monto Máximo Mensual ($)</label>
@@ -180,16 +191,25 @@
 
                 movimientos = movimientos || []; presupuestos = presupuestos || [];
 
-                let ingresos = 0, gastos = 0, gastosPorCategoria = {};
+                let ingresos = 0, gastos = 0, ahorros = 0, gastosPorCategoria = {};
                 movimientos.forEach(m => {
                     const monto = parseFloat(m.monto);
-                    if (m.tipo === 'Ingreso') ingresos += monto;
-                    else { gastos += monto; gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto; }
+                    if (m.tipo === 'Ingreso') {
+                        ingresos += monto;
+                    } else { // Gasto
+                        if (m.categoria === 'Ahorro') {
+                            ahorros += monto;
+                        } else {
+                            gastos += monto;
+                        }
+                        gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
+                    }
                 });
 
                 document.getElementById('txt-total-ingresos').innerText = fMoneda(ingresos);
                 document.getElementById('txt-total-gastos').innerText = fMoneda(gastos);
-                document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos);
+                document.getElementById('txt-total-ahorros').innerText = fMoneda(ahorros);
+                document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos - ahorros);
 
                 const contenedorPre = document.getElementById('contenedor-presupuestos');
                 contenedorPre.innerHTML = '';
