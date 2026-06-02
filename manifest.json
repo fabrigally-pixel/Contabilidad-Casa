@@ -1,0 +1,15 @@
+{
+  "name": "Fondo Común",
+  "short_name": "Contabilidad",
+  "start_url": "/Contabilidad-Casa/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/Contabilidad-Casa/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
