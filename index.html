@@ -4,342 +4,357 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuestra Contabilidad</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#030712">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        .fondo-personalizado {
+            background-image: url('fondo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .capa-oscura {
+            background-color: rgba(3, 7, 18, 0.85); /* Nivel de oscuridad (0.85) */
+            min-height: 100vh;
+        }
+    </style>
 </head>
-<body class="bg-gray-950 text-gray-100 font-sans min-h-screen pb-24">
+<body class="fondo-personalizado text-gray-100 font-sans">
+    
+    <div class="capa-oscura pb-24">
 
-    <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 shadow-lg">
-        <div class="max-w-md mx-auto flex justify-between items-center">
-            <h1 class="text-base font-bold tracking-wide text-indigo-400">🏡 Fondo Común</h1>
-            <select id="select-mes-filtro" class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs px-2 py-1 rounded-full font-bold focus:outline-none">
-            </select>
-        </div>
-    </header>
-
-    <main class="max-w-md mx-auto p-4 space-y-6">
-
-        <!-- ESTADO DE CAJA: INGRESÓ, SALIÓ, AHORRO -->
-        <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
-            <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
-            <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
-            
-            <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-700">
-                <div>
-                    <p class="text-[11px] text-gray-400 font-medium">Ingresó</p>
-                    <p class="text-sm font-bold text-green-400 mt-0.5" id="txt-total-ingresos">$0</p>
-                </div>
-                <div class="border-l border-gray-700">
-                    <p class="text-[11px] text-gray-400 font-medium">Salió</p>
-                    <p class="text-sm font-bold text-red-400 mt-0.5" id="txt-total-gastos">$0</p>
-                </div>
-                <div class="border-l border-gray-700">
-                    <p class="text-[11px] text-gray-400 font-medium">Ahorro</p>
-                    <p class="text-sm font-bold text-indigo-400 mt-0.5" id="txt-total-ahorros">$0</p>
-                </div>
+        <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 shadow-lg">
+            <div class="max-w-md mx-auto flex justify-between items-center">
+                <h1 class="text-base font-bold tracking-wide text-indigo-400">🏡 Fondo Común</h1>
+                <select id="select-mes-filtro" class="bg-gray-900 border border-gray-700 text-indigo-300 text-xs px-2 py-1 rounded-full font-bold focus:outline-none">
+                </select>
             </div>
-        </section>
+        </header>
 
-        <!-- SECCIÓN DE LÍMITES -->
-        <section class="space-y-4">
-            <div class="flex justify-between items-center pl-1">
-                <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">Límites y Alertas</h2>
-                <button id="btn-config-limite" class="text-xs font-bold text-indigo-400 hover:underline">
-                    <i class="fa-solid fa-plus mr-1"></i>Agregar Tope
+        <main class="max-w-md mx-auto p-4 space-y-6">
+
+            <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
+                <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
+                <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
+                
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-700">
+                    <div>
+                        <p class="text-[11px] text-gray-400 font-medium">Ingresó</p>
+                        <p class="text-sm font-bold text-green-400 mt-0.5" id="txt-total-ingresos">$0</p>
+                    </div>
+                    <div class="border-l border-gray-700">
+                        <p class="text-[11px] text-gray-400 font-medium">Salió</p>
+                        <p class="text-sm font-bold text-red-400 mt-0.5" id="txt-total-gastos">$0</p>
+                    </div>
+                    <div class="border-l border-gray-700">
+                        <p class="text-[11px] text-gray-400 font-medium">Ahorro</p>
+                        <p class="text-sm font-bold text-indigo-400 mt-0.5" id="txt-total-ahorros">$0</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="flex justify-between items-center pl-1">
+                    <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">Límites y Alertas</h2>
+                    <button id="btn-config-limite" class="text-xs font-bold text-indigo-400 hover:underline">
+                        <i class="fa-solid fa-plus mr-1"></i>Agregar Tope
+                    </button>
+                </div>
+                <div id="contenedor-presupuestos" class="space-y-3">
+                    <p class="text-sm text-gray-500 italic pl-1">Cargando cuentas...</p>
+                </div>
+            </section>
+
+            <div class="text-center">
+                <button id="btn-toggle-resumen" class="text-xs font-bold text-indigo-400 bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl transition active:bg-gray-700 shadow-sm">
+                    <i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo
                 </button>
             </div>
-            <div id="contenedor-presupuestos" class="space-y-3">
-                <p class="text-sm text-gray-500 italic pl-1">Cargando cuentas...</p>
-            </div>
-        </section>
 
-        <div class="text-center">
-            <button id="btn-toggle-resumen" class="text-xs font-bold text-indigo-400 bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl transition active:bg-gray-700 shadow-sm">
-                <i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo
-            </button>
+            <section id="seccion-resumen" class="hidden space-y-3 pt-2">
+                <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black pl-1">Historial del Mes Seleccionado</h2>
+                <div id="lista-movimientos" class="space-y-2"></div>
+            </section>
+
+        </main>
+
+        <button id="btn-abrir-modal" class="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-90 transition-transform z-20">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <div id="modal-carga" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
+            <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                    <h3 class="text-base font-bold text-white">Nuevo Registro</h3>
+                    <button type="button" id="btn-cerrar-modal" class="text-gray-400 hover:text-white text-xl px-2 py-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="form-movimiento" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btn-tipo-gasto" class="py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center">Gasto</button>
+                        <button type="button" id="btn-tipo-ingreso" class="py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center">Ingreso</button>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">Monto ($)</label>
+                        <input type="number" id="input-monto" required inputmode="decimal" placeholder="0" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-lg font-bold text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">Categoría</label>
+                        <select id="input-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
+                            <option value="Gasto de Casa">🏠 Gasto de Casa</option>
+                            <option value="Combustible">🚗 Combustible</option>
+                            <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
+                            <option value="Ahorro">🐷 Ahorro</option>
+                            <option value="Sueldo">💰 Ingreso / Sueldo</option>
+                            <option value="Otros">💡 Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">Nota / Detalle corto</label>
+                        <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Nafta, Guardado mes" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Guardar Registro</button>
+                </form>
+            </div>
         </div>
 
-        <section id="seccion-resumen" class="hidden space-y-3 pt-2">
-            <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black pl-1">Historial del Mes Seleccionado</h2>
-            <div id="lista-movimientos" class="space-y-2"></div>
-        </section>
-
-    </main>
-
-    <button id="btn-abrir-modal" class="fixed bottom-6 right-6 bg-indigo-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl active:scale-90 transition-transform z-20">
-        <i class="fa-solid fa-plus"></i>
-    </button>
-
-    <!-- MODAL 1: REGISTRAR MOVIMIENTO -->
-    <div id="modal-carga" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
-        <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
-            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
-                <h3 class="text-base font-bold text-white">Nuevo Registro</h3>
-                <button type="button" id="btn-cerrar-modal" class="text-gray-400 hover:text-white text-xl px-2 py-1"><i class="fa-solid fa-xmark"></i></button>
+        <div id="modal-config" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
+            <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                    <h3 class="text-base font-bold text-white">Agregar Límite de Gasto</h3>
+                    <button type="button" id="btn-cerrar-config" class="text-gray-400 hover:text-white text-xl px-2 py-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="form-config" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">Elegir Categoría del Límite</label>
+                        <select id="cfg-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
+                            <option value="Gasto de Casa">🏠 Gasto de Casa</option>
+                            <option value="Combustible">🚗 Combustible</option>
+                            <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
+                            <option value="Ahorro">🐷 Ahorro</option>
+                            <option value="Otros">💡 Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">Monto Máximo Mensual ($)</label>
+                        <input type="number" id="cfg-monto" required placeholder="Ej: 150000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Establecer Límite</button>
+                </form>
             </div>
-            <form id="form-movimiento" class="space-y-4">
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" id="btn-tipo-gasto" class="py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center">Gasto</button>
-                    <button type="button" id="btn-tipo-ingreso" class="py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center">Ingreso</button>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-1">Monto ($)</label>
-                    <input type="number" id="input-monto" required inputmode="decimal" placeholder="0" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-lg font-bold text-white focus:outline-none">
-                </div>
-                <div>
-                    <!-- DESPLEGABLE DE CATEGORÍAS (MOVIMIENTOS) -->
-                    <label class="block text-xs font-bold text-gray-400 mb-1">Categoría</label>
-                    <select id="input-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
-                        <option value="Gasto de Casa">🏠 Gasto de Casa</option>
-                        <option value="Combustible">🚗 Combustible</option>
-                        <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
-                        <option value="Ahorro">🐷 Ahorro</option>
-                        <option value="Sueldo">💰 Ingreso / Sueldo</option>
-                        <option value="Otros">💡 Otros</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-1">Nota / Detalle corto</label>
-                    <input type="text" id="input-detalle" placeholder="Ej: Carnicería, Nafta, Guardado mes" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
-                </div>
-                <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Guardar Registro</button>
-            </form>
         </div>
-    </div>
 
-    <!-- MODAL 2: CONFIGURAR UN TOPE -->
-    <div id="modal-config" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
-        <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
-            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
-                <h3 class="text-base font-bold text-white">Agregar Límite de Gasto</h3>
-                <button type="button" id="btn-cerrar-config" class="text-gray-400 hover:text-white text-xl px-2 py-1"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form id="form-config" class="space-y-4">
-                <div>
-                    <!-- DESPLEGABLE DE CATEGORÍAS IDÉNTICO (LÍMITES) -->
-                    <label class="block text-xs font-bold text-gray-400 mb-1">Elegir Categoría del Límite</label>
-                    <select id="cfg-categoria" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none">
-                        <option value="Gasto de Casa">🏠 Gasto de Casa</option>
-                        <option value="Combustible">🚗 Combustible</option>
-                        <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
-                        <option value="Ahorro">🐷 Ahorro</option>
-                        <option value="Otros">💡 Otros</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 mb-1">Monto Máximo Mensual ($)</label>
-                    <input type="number" id="cfg-monto" required placeholder="Ej: 150000" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
-                </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Establecer Límite</button>
-            </form>
-        </div>
-    </div>
+        <script>
+            const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
+            const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
+            
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <script>
-        const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
-        
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            let tipoSeleccionado = 'Gasto';
+            let mesSeleccionado = "";
 
-        let tipoSeleccionado = 'Gasto';
-        let mesSeleccionado = "";
-
-        function inicializarSelectorMeses() {
-            const selector = document.getElementById('select-mes-filtro');
-            const hoy = new Date();
-            mesSeleccionado = hoy.toISOString().slice(0, 7);
-            const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-            for (let i = -4; i <= 2; i++) {
-                let d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
-                let val = d.toISOString().slice(0, 7);
-                let opt = document.createElement('option');
-                opt.value = val; opt.innerText = `${nombresMeses[d.getMonth()]} ${d.getFullYear()}`;
-                if (val === mesSeleccionado) opt.selected = true;
-                selector.appendChild(opt);
+            function inicializarSelectorMeses() {
+                const selector = document.getElementById('select-mes-filtro');
+                const hoy = new Date();
+                mesSeleccionado = hoy.toISOString().slice(0, 7);
+                const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+                for (let i = -4; i <= 2; i++) {
+                    let d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
+                    let val = d.toISOString().slice(0, 7);
+                    let opt = document.createElement('option');
+                    opt.value = val; opt.innerText = `${nombresMeses[d.getMonth()]} ${d.getFullYear()}`;
+                    if (val === mesSeleccionado) opt.selected = true;
+                    selector.appendChild(opt);
+                }
+                selector.addEventListener('change', (e) => { mesSeleccionado = e.target.value; cargarTodo(); });
             }
-            selector.addEventListener('change', (e) => { mesSeleccionado = e.target.value; cargarTodo(); });
-        }
 
-        const modalCarga = document.getElementById('modal-carga');
-        const modalConfig = document.getElementById('modal-config');
-        const seccionResumen = document.getElementById('seccion-resumen');
+            const modalCarga = document.getElementById('modal-carga');
+            const modalConfig = document.getElementById('modal-config');
+            const seccionResumen = document.getElementById('seccion-resumen');
 
-        document.getElementById('btn-abrir-modal').addEventListener('click', () => modalCarga.classList.replace('hidden', 'flex'));
-        document.getElementById('btn-cerrar-modal').addEventListener('click', () => modalCarga.classList.replace('flex', 'hidden'));
-        document.getElementById('btn-cerrar-config').addEventListener('click', () => modalConfig.classList.replace('flex', 'hidden'));
-        document.getElementById('btn-config-limite').addEventListener('click', () => modalConfig.classList.replace('hidden', 'flex'));
+            document.getElementById('btn-abrir-modal').addEventListener('click', () => modalCarga.classList.replace('hidden', 'flex'));
+            document.getElementById('btn-cerrar-modal').addEventListener('click', () => modalCarga.classList.replace('flex', 'hidden'));
+            document.getElementById('btn-cerrar-config').addEventListener('click', () => modalConfig.classList.replace('flex', 'hidden'));
+            document.getElementById('btn-config-limite').addEventListener('click', () => modalConfig.classList.replace('hidden', 'flex'));
 
-        const btnGasto = document.getElementById('btn-tipo-gasto');
-        const btnIngreso = document.getElementById('btn-tipo-ingreso');
-        btnGasto.addEventListener('click', () => { tipoSeleccionado = 'Gasto'; btnGasto.className = "py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center"; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
-        btnIngreso.addEventListener('click', () => { tipoSeleccionado = 'Ingreso'; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-green-500 bg-green-500/10 text-green-400 text-center"; btnGasto.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
+            const btnGasto = document.getElementById('btn-tipo-gasto');
+            const btnIngreso = document.getElementById('btn-tipo-ingreso');
+            btnGasto.addEventListener('click', () => { tipoSeleccionado = 'Gasto'; btnGasto.className = "py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center"; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
+            btnIngreso.addEventListener('click', () => { tipoSeleccionado = 'Ingreso'; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-green-500 bg-green-500/10 text-green-400 text-center"; btnGasto.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
 
-        document.getElementById('btn-toggle-resumen').addEventListener('click', (e) => {
-            seccionResumen.classList.toggle('hidden');
-            e.currentTarget.innerHTML = seccionResumen.classList.contains('hidden') ? '<i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo' : '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Resumen';
-        });
+            document.getElementById('btn-toggle-resumen').addEventListener('click', (e) => {
+                seccionResumen.classList.toggle('hidden');
+                e.currentTarget.innerHTML = seccionResumen.classList.contains('hidden') ? '<i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo' : '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Resumen';
+            });
 
-        const fMoneda = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
+            const fMoneda = (num) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
 
-        async function cargarTodo() {
-            try {
-                let { data: presupuestos, error: errP } = await supabaseClient.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
-                if(errP) throw errP;
+            async function cargarTodo() {
+                try {
+                    let { data: presupuestos, error: errP } = await supabaseClient.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
+                    if(errP) throw errP;
 
-                const primerDia = `${mesSeleccionado}-01`;
-                let partes = mesSeleccionado.split('-');
-                let dSeg = new Date(parseInt(partes[0]), parseInt(partes[1]), 1);
-                const primerDiaSiguiente = dSeg.toISOString().slice(0, 7) + "-01";
+                    const primerDia = `${mesSeleccionado}-01`;
+                    let partes = mesSeleccionado.split('-');
+                    let dSeg = new Date(parseInt(partes[0]), parseInt(partes[1]), 1);
+                    const primerDiaSiguiente = dSeg.toISOString().slice(0, 7) + "-01";
 
-                // ACÁ ESTÁ LA MAGIA DEL ORDENAMIENTO: Ordena por fecha y luego por momento exacto de creación (created_at)
-                let { data: movimientos, error: errM } = await supabaseClient.from('movimientos')
-                    .select('*')
-                    .gte('fecha', primerDia)
-                    .lt('fecha', primerDiaSiguiente)
-                    .order('fecha', { ascending: false })
-                    .order('created_at', { ascending: false });
-                if(errM) throw errM;
+                    // ACÁ ESTÁ LA MAGIA DEL ORDENAMIENTO: Ordena por fecha y luego por momento exacto de creación (created_at)
+                    let { data: movimientos, error: errM } = await supabaseClient.from('movimientos')
+                        .select('*')
+                        .gte('fecha', primerDia)
+                        .lt('fecha', primerDiaSiguiente)
+                        .order('fecha', { ascending: false })
+                        .order('created_at', { ascending: false });
+                    if(errM) throw errM;
 
-                movimientos = movimientos || []; presupuestos = presupuestos || [];
+                    movimientos = movimientos || []; presupuestos = presupuestos || [];
 
-                let ingresos = 0, gastos = 0, ahorros = 0, gastosPorCategoria = {};
-                movimientos.forEach(m => {
-                    const monto = parseFloat(m.monto);
-                    if (m.tipo === 'Ingreso') {
-                        ingresos += monto;
-                    } else { // Si es Gasto
-                        if (m.categoria === 'Ahorro') {
-                            ahorros += monto;
-                        } else {
-                            gastos += monto;
+                    let ingresos = 0, gastos = 0, ahorros = 0, gastosPorCategoria = {};
+                    movimientos.forEach(m => {
+                        const monto = parseFloat(m.monto);
+                        if (m.tipo === 'Ingreso') {
+                            ingresos += monto;
+                        } else { // Si es Gasto
+                            if (m.categoria === 'Ahorro') {
+                                ahorros += monto;
+                            } else {
+                                gastos += monto;
+                            }
+                            gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
                         }
-                        gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
+                    });
+
+                    document.getElementById('txt-total-ingresos').innerText = fMoneda(ingresos);
+                    document.getElementById('txt-total-gastos').innerText = fMoneda(gastos);
+                    document.getElementById('txt-total-ahorros').innerText = fMoneda(ahorros);
+                    document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos - ahorros);
+
+                    const contenedorPre = document.getElementById('contenedor-presupuestos');
+                    contenedorPre.innerHTML = '';
+
+                    if (presupuestos.length === 0) {
+                        contenedorPre.innerHTML = `
+                            <div class="bg-gray-800/40 border border-dashed border-gray-700 rounded-2xl p-6 text-center text-sm text-gray-400">
+                                <p class="mb-2">No hay topes configurados para este mes.</p>
+                                <button onclick="document.getElementById('modal-config').classList.replace('hidden', 'flex')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold px-3 py-1.5 rounded-xl text-xs"><i class="fa-solid fa-plus mr-1"></i> Establecer límites ahora</button>
+                            </div>`;
+                    } else {
+                        presupuestos.forEach(p => {
+                            const totalGastado = gastosPorCategoria[p.categoria] || 0;
+                            const limite = parseFloat(p.limite); const restante = limite - totalGastado;
+                            let colorAlerta = "bg-green-500/10 text-green-400 border-green-500/20", textoAlerta = `Te quedan ${fMoneda(restante)}`;
+                            if (restante <= 0) { colorAlerta = "bg-red-500/20 text-red-400 border-red-500/40 font-black animate-pulse"; textoAlerta = `⚠️ ¡Límite superado por ${fMoneda(Math.abs(restante))}!`; }
+                            else if (restante <= (limite * 0.15)) { colorAlerta = "bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold"; textoAlerta = `⚠️ ¡Atención! Solo quedan ${fMoneda(restante)}`; }
+
+                            contenedorPre.innerHTML += `
+                                <div class="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-sm space-y-1.5">
+                                    <div class="flex justify-between items-center text-xs text-gray-400">
+                                        <span class="font-bold text-gray-200">${p.categoria}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span>Tope: ${fMoneda(limite)}</span>
+                                            <button onclick="borrarPresupuesto('${p.id}')" class="text-gray-500 hover:text-red-400 p-1 active:scale-90 transition-transform" title="Borrar tope">
+                                                <i class="fa-solid fa-trash-can text-[11px]"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-baseline"><span class="text-2xl font-black text-white">${fMoneda(totalGastado)}</span></div>
+                                    <div class="text-xs py-2 rounded-xl border ${colorAlerta} mt-1 text-center font-medium">${textoAlerta}</div>
+                                </div>`;
+                        });
                     }
-                });
 
-                document.getElementById('txt-total-ingresos').innerText = fMoneda(ingresos);
-                document.getElementById('txt-total-gastos').innerText = fMoneda(gastos);
-                document.getElementById('txt-total-ahorros').innerText = fMoneda(ahorros);
-                document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos - ahorros);
-
-                const contenedorPre = document.getElementById('contenedor-presupuestos');
-                contenedorPre.innerHTML = '';
-
-                if (presupuestos.length === 0) {
-                    contenedorPre.innerHTML = `
-                        <div class="bg-gray-800/40 border border-dashed border-gray-700 rounded-2xl p-6 text-center text-sm text-gray-400">
-                            <p class="mb-2">No hay topes configurados para este mes.</p>
-                            <button onclick="document.getElementById('modal-config').classList.replace('hidden', 'flex')" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold px-3 py-1.5 rounded-xl text-xs"><i class="fa-solid fa-plus mr-1"></i> Establecer límites ahora</button>
-                        </div>`;
-                } else {
-                    presupuestos.forEach(p => {
-                        const totalGastado = gastosPorCategoria[p.categoria] || 0;
-                        const limite = parseFloat(p.limite); const restante = limite - totalGastado;
-                        let colorAlerta = "bg-green-500/10 text-green-400 border-green-500/20", textoAlerta = `Te quedan ${fMoneda(restante)}`;
-                        if (restante <= 0) { colorAlerta = "bg-red-500/20 text-red-400 border-red-500/40 font-black animate-pulse"; textoAlerta = `⚠️ ¡Límite superado por ${fMoneda(Math.abs(restante))}!`; }
-                        else if (restante <= (limite * 0.15)) { colorAlerta = "bg-amber-500/20 text-amber-400 border-amber-500/40 font-bold"; textoAlerta = `⚠️ ¡Atención! Solo quedan ${fMoneda(restante)}`; }
-
-                        contenedorPre.innerHTML += `
-                            <div class="bg-gray-800 p-4 rounded-2xl border border-gray-700 shadow-sm space-y-1.5">
-                                <div class="flex justify-between items-center text-xs text-gray-400">
-                                    <span class="font-bold text-gray-200">${p.categoria}</span>
-                                    <div class="flex items-center gap-2">
-                                        <span>Tope: ${fMoneda(limite)}</span>
-                                        <button onclick="borrarPresupuesto('${p.id}')" class="text-gray-500 hover:text-red-400 p-1 active:scale-90 transition-transform" title="Borrar tope">
-                                            <i class="fa-solid fa-trash-can text-[11px]"></i>
+                    const listaHTML = document.getElementById('lista-movimientos'); listaHTML.innerHTML = '';
+                    if (movimientos.length === 0) { listaHTML.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">No hay movimientos.</p>`; }
+                    else {
+                        movimientos.forEach(m => {
+                            const icon = m.tipo === 'Ingreso' ? 'fa-arrow-trend-up text-green-400' : 'fa-basket-shopping text-red-400';
+                            listaHTML.innerHTML += `
+                                <div class="bg-gray-800/50 p-3 rounded-xl flex justify-between items-center border border-gray-700/50 text-xs">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-xl bg-gray-700 flex items-center justify-center text-xs"><i class="fa-solid ${icon}"></i></div>
+                                        <div><p class="font-bold text-gray-200">${m.detalle || m.categoria}</p><p class="text-[10px] text-gray-500">${m.categoria} • ${m.fecha}</p></div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <p class="font-bold text-sm ${m.tipo === 'Ingreso' ? 'text-green-400' : 'text-gray-200'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fMoneda(m.monto)}</p>
+                                        <button onclick="borrarMovimiento('${m.id}')" class="text-gray-500 hover:text-red-400 p-2 active:scale-90 transition-transform" title="Borrar registro">
+                                            <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </div>
-                                </div>
-                                <div class="flex justify-between items-baseline"><span class="text-2xl font-black text-white">${fMoneda(totalGastado)}</span></div>
-                                <div class="text-xs py-2 rounded-xl border ${colorAlerta} mt-1 text-center font-medium">${textoAlerta}</div>
-                            </div>`;
-                    });
+                                </div>`;
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error en Supabase:", error);
+                    document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
                 }
-
-                const listaHTML = document.getElementById('lista-movimientos'); listaHTML.innerHTML = '';
-                if (movimientos.length === 0) { listaHTML.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">No hay movimientos.</p>`; }
-                else {
-                    movimientos.forEach(m => {
-                        const icon = m.tipo === 'Ingreso' ? 'fa-arrow-trend-up text-green-400' : 'fa-basket-shopping text-red-400';
-                        listaHTML.innerHTML += `
-                            <div class="bg-gray-800/50 p-3 rounded-xl flex justify-between items-center border border-gray-700/50 text-xs">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-xl bg-gray-700 flex items-center justify-center text-xs"><i class="fa-solid ${icon}"></i></div>
-                                    <div><p class="font-bold text-gray-200">${m.detalle || m.categoria}</p><p class="text-[10px] text-gray-500">${m.categoria} • ${m.fecha}</p></div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <p class="font-bold text-sm ${m.tipo === 'Ingreso' ? 'text-green-400' : 'text-gray-200'}">${m.tipo === 'Ingreso' ? '+' : '-'}${fMoneda(m.monto)}</p>
-                                    <button onclick="borrarMovimiento('${m.id}')" class="text-gray-500 hover:text-red-400 p-2 active:scale-90 transition-transform" title="Borrar registro">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </div>
-                            </div>`;
-                    });
-                }
-            } catch (error) {
-                console.error("Error en Supabase:", error);
-                document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
             }
-        }
 
-        window.borrarMovimiento = async function(id) {
-            if (confirm("¿Estás seguro que querés borrar este registro?")) {
-                const { error } = await supabaseClient.from('movimientos').delete().eq('id', id);
+            window.borrarMovimiento = async function(id) {
+                if (confirm("¿Estás seguro que querés borrar este registro?")) {
+                    const { error } = await supabaseClient.from('movimientos').delete().eq('id', id);
+                    if (error) {
+                        alert("Error al borrar: " + error.message);
+                    } else {
+                        cargarTodo();
+                    }
+                }
+            };
+
+            window.borrarPresupuesto = async function(id) {
+                if (confirm("¿Estás seguro que querés borrar este límite/tope?")) {
+                    const { error } = await supabaseClient.from('presupuestos').delete().eq('id', id);
+                    if (error) {
+                        alert("Error al borrar el límite: " + error.message);
+                    } else {
+                        cargarTodo();
+                    }
+                }
+            };
+
+            document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fechaHoy = new Date().toISOString().split('T')[0];
+                const { error } = await supabaseClient.from('movimientos').insert([{ 
+                    tipo: tipoSeleccionado, 
+                    monto: parseFloat(document.getElementById('input-monto').value), 
+                    categoria: document.getElementById('input-categoria').value, 
+                    detalle: document.getElementById('input-detalle').value,
+                    fecha: fechaHoy
+                }]);
+
                 if (error) {
-                    alert("Error al borrar: " + error.message);
+                    alert("Error al guardar: " + error.message);
                 } else {
-                    cargarTodo();
+                    e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
                 }
-            }
-        };
+            });
 
-        window.borrarPresupuesto = async function(id) {
-            if (confirm("¿Estás seguro que querés borrar este límite/tope?")) {
-                const { error } = await supabaseClient.from('presupuestos').delete().eq('id', id);
+            document.getElementById('form-config').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const categoriaTope = document.getElementById('cfg-categoria').value;
+                const montoTope = parseFloat(document.getElementById('cfg-monto').value);
+
+                const { error } = await supabaseClient.from('presupuestos').insert([
+                    { mes_anio: mesSeleccionado, categoria: categoriaTope, limite: montoTope }
+                ]);
+
                 if (error) {
-                    alert("Error al borrar el límite: " + error.message);
+                    alert("Error al guardar límite: " + error.message);
                 } else {
-                    cargarTodo();
+                    e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
                 }
-            }
-        };
+            });
 
-        document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fechaHoy = new Date().toISOString().split('T')[0];
-            const { error } = await supabaseClient.from('movimientos').insert([{ 
-                tipo: tipoSeleccionado, 
-                monto: parseFloat(document.getElementById('input-monto').value), 
-                categoria: document.getElementById('input-categoria').value, 
-                detalle: document.getElementById('input-detalle').value,
-                fecha: fechaHoy
-            }]);
+            window.addEventListener('DOMContentLoaded', () => { inicializarSelectorMeses(); cargarTodo(); });
+        </script>
 
-            if (error) {
-                alert("Error al guardar: " + error.message);
-            } else {
-                e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
-            }
-        });
-
-        document.getElementById('form-config').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const categoriaTope = document.getElementById('cfg-categoria').value;
-            const montoTope = parseFloat(document.getElementById('cfg-monto').value);
-
-            const { error } = await supabaseClient.from('presupuestos').insert([
-                { mes_anio: mesSeleccionado, categoria: categoriaTope, limite: montoTope }
-            ]);
-
-            if (error) {
-                alert("Error al guardar límite: " + error.message);
-            } else {
-                e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
-            }
-        });
-
-        window.addEventListener('DOMContentLoaded', () => { inicializarSelectorMeses(); cargarTodo(); });
-    </script>
+    </div>
 </body>
 </html>
