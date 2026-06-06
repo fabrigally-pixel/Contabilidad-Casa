@@ -212,18 +212,26 @@
             let tipoSeleccionado = 'Gasto';
             let mesSeleccionado = "";
 
+            // --- MODIFICADO: Ahora genera los meses desde 2024 hasta 10 años en el futuro ---
             function inicializarSelectorMeses() {
                 const selector = document.getElementById('select-mes-filtro');
                 const hoy = new Date();
                 mesSeleccionado = hoy.toISOString().slice(0, 7);
                 const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-                for (let i = -4; i <= 2; i++) {
-                    let d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
-                    let val = d.toISOString().slice(0, 7);
-                    let opt = document.createElement('option');
-                    opt.value = val; opt.innerText = `${nombresMeses[d.getMonth()]} ${d.getFullYear()}`;
-                    if (val === mesSeleccionado) opt.selected = true;
-                    selector.appendChild(opt);
+                
+                const anioInicio = 2024;
+                const anioFin = hoy.getFullYear() + 10; 
+
+                for (let anio = anioInicio; anio <= anioFin; anio++) {
+                    for (let mes = 0; mes < 12; mes++) {
+                        let mesStr = String(mes + 1).padStart(2, '0');
+                        let val = `${anio}-${mesStr}`;
+                        let opt = document.createElement('option');
+                        opt.value = val; 
+                        opt.innerText = `${nombresMeses[mes]} ${anio}`;
+                        if (val === mesSeleccionado) opt.selected = true;
+                        selector.appendChild(opt);
+                    }
                 }
                 selector.addEventListener('change', (e) => { mesSeleccionado = e.target.value; cargarTodo(); });
             }
@@ -311,7 +319,13 @@
                     const contFijos = document.getElementById('contenedor-fijos');
                     contFijos.innerHTML = '';
                     if (fijos.length === 0) {
-                        contFijos.innerHTML = `<p class="text-xs text-gray-400 italic bg-gray-800/40 p-3 rounded-xl border border-gray-700 border-dashed text-center">No hay servicios anotados este mes.</p>`;
+                        contFijos.innerHTML = `
+                            <div class="bg-gray-800/40 p-4 rounded-xl border border-gray-700 border-dashed text-center space-y-3">
+                                <p class="text-xs text-gray-400 italic">No hay servicios anotados este mes.</p>
+                                <button onclick="copiarFijosAnterior()" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold px-3 py-2 rounded-xl text-xs transition active:scale-95 w-full shadow-sm">
+                                    <i class="fa-solid fa-copy mr-1"></i> Traer del mes pasado
+                                </button>
+                            </div>`;
                     } else {
                         fijos.forEach(f => {
                             if (f.pagado) {
@@ -396,6 +410,36 @@
                     document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
                 }
             }
+
+            // NUEVA FUNCIÓN: Copiar fijos del mes anterior
+            window.copiarFijosAnterior = async function() {
+                try {
+                    let partes = mesSeleccionado.split('-');
+                    let dAnt = new Date(parseInt(partes[0]), parseInt(partes[1]) - 2, 1);
+                    let mesAnterior = dAnt.getFullYear() + "-" + String(dAnt.getMonth() + 1).padStart(2, '0');
+
+                    let { data: fijosAnt, error: errA } = await supabaseClient.from('fijos').select('nombre').eq('mes_anio', mesAnterior);
+                    if(errA) throw errA;
+
+                    if (!fijosAnt || fijosAnt.length === 0) {
+                        alert("No hay servicios anotados en el mes anterior para copiar.");
+                        return;
+                    }
+
+                    const nuevosFijos = fijosAnt.map(f => ({
+                        mes_anio: mesSeleccionado,
+                        nombre: f.nombre
+                    }));
+
+                    let { error: errI } = await supabaseClient.from('fijos').insert(nuevosFijos);
+                    if(errI) throw errI;
+
+                    cargarTodo();
+                } catch (error) {
+                    console.error("Error copiando fijos:", error);
+                    alert("Hubo un error al intentar copiar los servicios.");
+                }
+            };
 
             window.borrarMovimiento = async function(id) {
                 if (confirm("¿Borrar este registro?")) {
