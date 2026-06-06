@@ -20,7 +20,7 @@
             background-attachment: fixed;
         }
         .capa-oscura {
-            background-color: rgba(3, 7, 18, 0.85); /* Nivel de oscuridad (0.85) */
+            background-color: rgba(3, 7, 18, 0.85);
             min-height: 100vh;
         }
     </style>
@@ -56,6 +56,18 @@
                         <p class="text-[11px] text-gray-400 font-medium">Ahorro</p>
                         <p class="text-sm font-bold text-indigo-400 mt-0.5" id="txt-total-ahorros">$0</p>
                     </div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="flex justify-between items-center pl-1">
+                    <h2 class="text-xs uppercase tracking-wider text-gray-400 font-black">📌 Machete de Fijos</h2>
+                    <button id="btn-nuevo-fijo" class="text-xs font-bold text-indigo-400 hover:underline">
+                        <i class="fa-solid fa-plus mr-1"></i>Anotar Servicio
+                    </button>
+                </div>
+                <div id="contenedor-fijos" class="space-y-2">
+                    <p class="text-sm text-gray-500 italic pl-1">Cargando machete...</p>
                 </div>
             </section>
 
@@ -149,6 +161,41 @@
             </div>
         </div>
 
+        <div id="modal-nuevo-fijo" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
+            <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                    <h3 class="text-base font-bold text-white">Anotar Servicio a Pagar</h3>
+                    <button type="button" id="btn-cerrar-fijo" class="text-gray-400 hover:text-white text-xl px-2 py-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="form-nuevo-fijo" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">Nombre del Servicio / Gasto</label>
+                        <input type="text" id="input-nombre-fijo" required placeholder="Ej: Luz, Internet, Tarjeta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white font-bold focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Anotar en Machete</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="modal-pagar-fijo" class="fixed inset-0 bg-black/70 hidden items-end sm:items-center justify-center p-4 z-30 shadow-2xl">
+            <div class="bg-gray-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 space-y-4 border-t border-gray-700 sm:border">
+                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                    <h3 class="text-base font-bold text-white">Abonar: <span id="lbl-nombre-servicio" class="text-indigo-400"></span></h3>
+                    <button type="button" id="btn-cerrar-pago-fijo" class="text-gray-400 hover:text-white text-xl px-2 py-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <form id="form-pagar-fijo" class="space-y-4">
+                    <input type="hidden" id="hidden-id-fijo">
+                    <input type="hidden" id="hidden-nombre-fijo">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1">¿Cuánto vino este mes? ($)</label>
+                        <input type="number" id="input-monto-pago-fijo" required inputmode="decimal" placeholder="0" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-lg font-bold text-white focus:outline-none">
+                        <p class="text-[10px] text-gray-500 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>Se guardará automáticamente como Gasto en el historial.</p>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold shadow-lg">Confirmar Pago</button>
+                </form>
+            </div>
+        </div>
+
         <script>
             const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
             const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
@@ -176,12 +223,20 @@
 
             const modalCarga = document.getElementById('modal-carga');
             const modalConfig = document.getElementById('modal-config');
+            const modalNuevoFijo = document.getElementById('modal-nuevo-fijo');
+            const modalPagarFijo = document.getElementById('modal-pagar-fijo');
             const seccionResumen = document.getElementById('seccion-resumen');
 
             document.getElementById('btn-abrir-modal').addEventListener('click', () => modalCarga.classList.replace('hidden', 'flex'));
             document.getElementById('btn-cerrar-modal').addEventListener('click', () => modalCarga.classList.replace('flex', 'hidden'));
-            document.getElementById('btn-cerrar-config').addEventListener('click', () => modalConfig.classList.replace('flex', 'hidden'));
+            
             document.getElementById('btn-config-limite').addEventListener('click', () => modalConfig.classList.replace('hidden', 'flex'));
+            document.getElementById('btn-cerrar-config').addEventListener('click', () => modalConfig.classList.replace('flex', 'hidden'));
+
+            document.getElementById('btn-nuevo-fijo').addEventListener('click', () => modalNuevoFijo.classList.replace('hidden', 'flex'));
+            document.getElementById('btn-cerrar-fijo').addEventListener('click', () => modalNuevoFijo.classList.replace('flex', 'hidden'));
+            
+            document.getElementById('btn-cerrar-pago-fijo').addEventListener('click', () => modalPagarFijo.classList.replace('flex', 'hidden'));
 
             const btnGasto = document.getElementById('btn-tipo-gasto');
             const btnIngreso = document.getElementById('btn-tipo-ingreso');
@@ -200,12 +255,14 @@
                     let { data: presupuestos, error: errP } = await supabaseClient.from('presupuestos').select('*').eq('mes_anio', mesSeleccionado);
                     if(errP) throw errP;
 
+                    let { data: fijos, error: errF } = await supabaseClient.from('fijos').select('*').eq('mes_anio', mesSeleccionado).order('created_at', { ascending: true });
+                    if(errF) throw errF;
+
                     const primerDia = `${mesSeleccionado}-01`;
                     let partes = mesSeleccionado.split('-');
                     let dSeg = new Date(parseInt(partes[0]), parseInt(partes[1]), 1);
                     const primerDiaSiguiente = dSeg.toISOString().slice(0, 7) + "-01";
 
-                    // ACÁ ESTÁ LA MAGIA DEL ORDENAMIENTO: Ordena por fecha y luego por momento exacto de creación (created_at)
                     let { data: movimientos, error: errM } = await supabaseClient.from('movimientos')
                         .select('*')
                         .gte('fecha', primerDia)
@@ -214,19 +271,17 @@
                         .order('created_at', { ascending: false });
                     if(errM) throw errM;
 
-                    movimientos = movimientos || []; presupuestos = presupuestos || [];
+                    movimientos = movimientos || []; presupuestos = presupuestos || []; fijos = fijos || [];
 
+                    // --- CÁLCULO DE CAJA ---
                     let ingresos = 0, gastos = 0, ahorros = 0, gastosPorCategoria = {};
                     movimientos.forEach(m => {
                         const monto = parseFloat(m.monto);
                         if (m.tipo === 'Ingreso') {
                             ingresos += monto;
-                        } else { // Si es Gasto
-                            if (m.categoria === 'Ahorro') {
-                                ahorros += monto;
-                            } else {
-                                gastos += monto;
-                            }
+                        } else { 
+                            if (m.categoria === 'Ahorro') ahorros += monto;
+                            else gastos += monto;
                             gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
                         }
                     });
@@ -236,9 +291,38 @@
                     document.getElementById('txt-total-ahorros').innerText = fMoneda(ahorros);
                     document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos - ahorros);
 
+                    // --- RENDER MACHETE FIJOS ---
+                    const contFijos = document.getElementById('contenedor-fijos');
+                    contFijos.innerHTML = '';
+                    if (fijos.length === 0) {
+                        contFijos.innerHTML = `<p class="text-xs text-gray-400 italic bg-gray-800/40 p-3 rounded-xl border border-gray-700 border-dashed text-center">No hay servicios anotados este mes.</p>`;
+                    } else {
+                        fijos.forEach(f => {
+                            if (f.pagado) {
+                                contFijos.innerHTML += `
+                                    <div class="bg-green-500/10 border border-green-500/30 p-3 rounded-xl flex justify-between items-center transition-all">
+                                        <div>
+                                            <p class="font-bold text-green-400 line-through decoration-green-600/50">${f.nombre}</p>
+                                            <p class="text-[10px] text-green-300"><i class="fa-solid fa-check mr-1"></i>Pagado: ${fMoneda(f.monto)}</p>
+                                        </div>
+                                        <button onclick="borrarFijo('${f.id}')" class="text-gray-500 hover:text-red-400 px-2 py-1"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>`;
+                            } else {
+                                contFijos.innerHTML += `
+                                    <div class="bg-gray-800/60 border border-gray-600 border-dashed p-3 rounded-xl flex justify-between items-center">
+                                        <p class="font-bold text-gray-300">${f.nombre}</p>
+                                        <div class="flex items-center gap-2">
+                                            <button onclick="abrirPagarFijo('${f.id}', '${f.nombre}')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition">Pagar</button>
+                                            <button onclick="borrarFijo('${f.id}')" class="text-gray-500 hover:text-red-400 px-2 py-1"><i class="fa-solid fa-trash-can"></i></button>
+                                        </div>
+                                    </div>`;
+                            }
+                        });
+                    }
+
+                    // --- RENDER PRESUPUESTOS ---
                     const contenedorPre = document.getElementById('contenedor-presupuestos');
                     contenedorPre.innerHTML = '';
-
                     if (presupuestos.length === 0) {
                         contenedorPre.innerHTML = `
                             <div class="bg-gray-800/40 border border-dashed border-gray-700 rounded-2xl p-6 text-center text-sm text-gray-400">
@@ -270,6 +354,7 @@
                         });
                     }
 
+                    // --- RENDER HISTORIAL ---
                     const listaHTML = document.getElementById('lista-movimientos'); listaHTML.innerHTML = '';
                     if (movimientos.length === 0) { listaHTML.innerHTML = `<p class="text-xs text-gray-500 italic text-center py-4">No hay movimientos.</p>`; }
                     else {
@@ -292,64 +377,92 @@
                     }
                 } catch (error) {
                     console.error("Error en Supabase:", error);
-                    document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
+                    document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión.</p>`;
                 }
             }
 
             window.borrarMovimiento = async function(id) {
-                if (confirm("¿Estás seguro que querés borrar este registro?")) {
-                    const { error } = await supabaseClient.from('movimientos').delete().eq('id', id);
-                    if (error) {
-                        alert("Error al borrar: " + error.message);
-                    } else {
-                        cargarTodo();
-                    }
+                if (confirm("¿Borrar este registro?")) {
+                    await supabaseClient.from('movimientos').delete().eq('id', id);
+                    cargarTodo();
                 }
             };
 
             window.borrarPresupuesto = async function(id) {
-                if (confirm("¿Estás seguro que querés borrar este límite/tope?")) {
-                    const { error } = await supabaseClient.from('presupuestos').delete().eq('id', id);
-                    if (error) {
-                        alert("Error al borrar el límite: " + error.message);
-                    } else {
-                        cargarTodo();
-                    }
+                if (confirm("¿Borrar este límite/tope?")) {
+                    await supabaseClient.from('presupuestos').delete().eq('id', id);
+                    cargarTodo();
                 }
             };
 
+            window.borrarFijo = async function(id) {
+                if (confirm("¿Borrar este servicio del machete? (Nota: Si ya estaba pagado, el gasto seguirá en tu historial)")) {
+                    await supabaseClient.from('fijos').delete().eq('id', id);
+                    cargarTodo();
+                }
+            };
+
+            window.abrirPagarFijo = function(id, nombre) {
+                document.getElementById('hidden-id-fijo').value = id;
+                document.getElementById('hidden-nombre-fijo').value = nombre;
+                document.getElementById('lbl-nombre-servicio').innerText = nombre;
+                document.getElementById('modal-pagar-fijo').classList.replace('hidden', 'flex');
+                document.getElementById('input-monto-pago-fijo').focus();
+            };
+
+            // FORMULARIOS
             document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const fechaHoy = new Date().toISOString().split('T')[0];
-                const { error } = await supabaseClient.from('movimientos').insert([{ 
+                await supabaseClient.from('movimientos').insert([{ 
                     tipo: tipoSeleccionado, 
                     monto: parseFloat(document.getElementById('input-monto').value), 
                     categoria: document.getElementById('input-categoria').value, 
                     detalle: document.getElementById('input-detalle').value,
                     fecha: fechaHoy
                 }]);
-
-                if (error) {
-                    alert("Error al guardar: " + error.message);
-                } else {
-                    e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
-                }
+                e.target.reset(); modalCarga.classList.replace('flex', 'hidden'); cargarTodo();
             });
 
             document.getElementById('form-config').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const categoriaTope = document.getElementById('cfg-categoria').value;
-                const montoTope = parseFloat(document.getElementById('cfg-monto').value);
+                await supabaseClient.from('presupuestos').insert([{ 
+                    mes_anio: mesSeleccionado, 
+                    categoria: document.getElementById('cfg-categoria').value, 
+                    limite: parseFloat(document.getElementById('cfg-monto').value) 
+                }]);
+                e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
+            });
 
-                const { error } = await supabaseClient.from('presupuestos').insert([
-                    { mes_anio: mesSeleccionado, categoria: categoriaTope, limite: montoTope }
-                ]);
+            document.getElementById('form-nuevo-fijo').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await supabaseClient.from('fijos').insert([{ 
+                    mes_anio: mesSeleccionado, 
+                    nombre: document.getElementById('input-nombre-fijo').value
+                }]);
+                e.target.reset(); modalNuevoFijo.classList.replace('flex', 'hidden'); cargarTodo();
+            });
 
-                if (error) {
-                    alert("Error al guardar límite: " + error.message);
-                } else {
-                    e.target.reset(); modalConfig.classList.replace('flex', 'hidden'); cargarTodo();
-                }
+            document.getElementById('form-pagar-fijo').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const idFijo = document.getElementById('hidden-id-fijo').value;
+                const nombreFijo = document.getElementById('hidden-nombre-fijo').value;
+                const montoPago = parseFloat(document.getElementById('input-monto-pago-fijo').value);
+                const fechaHoy = new Date().toISOString().split('T')[0];
+
+                // 1. Marcar en el Machete como pagado
+                await supabaseClient.from('fijos').update({ pagado: true, monto: montoPago }).eq('id', idFijo);
+
+                // 2. Cargarlo automáticamente en Movimientos (Ahorrando doble carga)
+                await supabaseClient.from('movimientos').insert([{ 
+                    tipo: 'Gasto', 
+                    monto: montoPago, 
+                    categoria: 'Fijos / Servicios', 
+                    detalle: 'Pago: ' + nombreFijo,
+                    fecha: fechaHoy
+                }]);
+
+                e.target.reset(); modalPagarFijo.classList.replace('flex', 'hidden'); cargarTodo();
             });
 
             window.addEventListener('DOMContentLoaded', () => { inicializarSelectorMeses(); cargarTodo(); });
