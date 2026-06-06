@@ -20,7 +20,7 @@
             background-attachment: fixed;
         }
         .capa-oscura {
-            background-color: rgba(3, 7, 18, 0.85);
+            background-color: rgba(3, 7, 18, 0.85); /* Nivel de oscuridad (0.85) */
             min-height: 100vh;
         }
     </style>
@@ -66,7 +66,14 @@
                         <i class="fa-solid fa-plus mr-1"></i>Anotar Servicio
                     </button>
                 </div>
-                <div id="contenedor-fijos" class="space-y-2">
+                
+                <div class="text-center">
+                    <button id="btn-toggle-fijos" class="text-xs font-bold text-indigo-400 bg-gray-800 border border-gray-700 px-4 py-2.5 rounded-xl transition active:bg-gray-700 shadow-sm w-full">
+                        <i class="fa-solid fa-list-check mr-1"></i> Ver Servicios a Pagar
+                    </button>
+                </div>
+
+                <div id="contenedor-fijos" class="hidden space-y-2">
                     <p class="text-sm text-gray-500 italic pl-1">Cargando machete...</p>
                 </div>
             </section>
@@ -243,6 +250,15 @@
             btnGasto.addEventListener('click', () => { tipoSeleccionado = 'Gasto'; btnGasto.className = "py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center"; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
             btnIngreso.addEventListener('click', () => { tipoSeleccionado = 'Ingreso'; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-green-500 bg-green-500/10 text-green-400 text-center"; btnGasto.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
 
+            // LÓGICA PARA MOSTRAR/OCULTAR MACHETE
+            document.getElementById('btn-toggle-fijos').addEventListener('click', (e) => {
+                const contFijos = document.getElementById('contenedor-fijos');
+                contFijos.classList.toggle('hidden');
+                e.currentTarget.innerHTML = contFijos.classList.contains('hidden') 
+                    ? '<i class="fa-solid fa-list-check mr-1"></i> Ver Servicios a Pagar' 
+                    : '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Machete';
+            });
+
             document.getElementById('btn-toggle-resumen').addEventListener('click', (e) => {
                 seccionResumen.classList.toggle('hidden');
                 e.currentTarget.innerHTML = seccionResumen.classList.contains('hidden') ? '<i class="fa-solid fa-chart-simple mr-1"></i> Ver Resumen Completo' : '<i class="fa-solid fa-eye-slash mr-1"></i> Ocultar Resumen';
@@ -377,7 +393,7 @@
                     }
                 } catch (error) {
                     console.error("Error en Supabase:", error);
-                    document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión.</p>`;
+                    document.getElementById('contenedor-presupuestos').innerHTML = `<p class="text-xs text-red-400 font-bold p-2">Error de conexión: ${error.message || error}</p>`;
                 }
             }
 
