@@ -46,13 +46,17 @@
                 <div id="chat-ia-respuesta" class="text-sm text-gray-300 italic hidden bg-gray-900/80 p-3 rounded-xl border border-gray-700"></div>
                 
                 <div class="flex gap-2">
+                    <button id="btn-mic-ia" type="button" class="bg-gray-700 text-gray-300 px-4 rounded-xl shadow-lg hover:bg-gray-600 transition active:scale-95" title="Hablar">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
                     <input type="text" id="input-ia" placeholder="Ej: Gasté 15000 en nafta..." class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition">
-                    <button id="btn-enviar-ia" class="bg-indigo-600 text-white px-4 rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition active:scale-95">
+                    <button id="btn-enviar-ia" type="button" class="bg-indigo-600 text-white px-4 rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition active:scale-95">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
                 <p class="text-[10px] text-gray-500 text-center">Pedile que anote gastos o preguntale cómo venís con el presupuesto.</p>
             </section>
+            
             <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
                 <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
                 <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
@@ -313,6 +317,51 @@
 
             btnIA.addEventListener('click', enviarComandoIA);
             inputIA.addEventListener('keypress', (e) => { if (e.key === 'Enter') enviarComandoIA(); });
+            
+            // --- LÓGICA DE VOZ (MICRÓFONO) ---
+            const btnMic = document.getElementById('btn-mic-ia');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (SpeechRecognition) {
+                const reconocimiento = new SpeechRecognition();
+                reconocimiento.lang = 'es-AR'; // Entiende nuestro acento y la palabra "pesos"
+                reconocimiento.continuous = false;
+                reconocimiento.interimResults = false;
+
+                reconocimiento.onstart = function() {
+                    // Cambia a rojo y palpita cuando está escuchando
+                    btnMic.classList.replace('bg-gray-700', 'bg-red-500');
+                    btnMic.classList.replace('text-gray-300', 'text-white');
+                    btnMic.innerHTML = '<i class="fa-solid fa-microphone-lines fa-beat"></i>';
+                    inputIA.placeholder = "Escuchando...";
+                };
+
+                reconocimiento.onresult = function(event) {
+                    // Agarra lo que hablaste y lo pega en la barra
+                    const transcripcion = event.results[0][0].transcript;
+                    inputIA.value = transcripcion;
+                };
+
+                reconocimiento.onend = function() {
+                    // Vuelve a la normalidad cuando dejas de hablar
+                    btnMic.classList.replace('bg-red-500', 'bg-gray-700');
+                    btnMic.classList.replace('text-white', 'text-gray-300');
+                    btnMic.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                    inputIA.placeholder = "Ej: Gasté 15000 en nafta...";
+                };
+
+                reconocimiento.onerror = function(event) {
+                    console.error("Error de voz: ", event.error);
+                    inputIA.placeholder = "No te escuché bien, intentá de nuevo.";
+                };
+
+                btnMic.addEventListener('click', () => {
+                    reconocimiento.start();
+                });
+            } else {
+                // Si el navegador es viejo y no lo soporta, esconde el botón para que no tire error
+                btnMic.style.display = 'none';
+            }
             // --- FIN LÓGICA IA ---
 
             function inicializarSelectorMeses() {
