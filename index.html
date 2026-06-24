@@ -20,7 +20,7 @@
             background-attachment: fixed;
         }
         .capa-oscura {
-            background-color: rgba(3, 7, 18, 0.85); /* Nivel de oscuridad (0.85) */
+            background-color: rgba(3, 7, 18, 0.85);
             min-height: 100vh;
         }
     </style>
@@ -39,6 +39,20 @@
 
         <main class="max-w-md mx-auto p-4 space-y-6">
 
+            <section class="bg-gray-800 p-4 rounded-2xl border border-indigo-500/50 shadow-xl space-y-3 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+                <h2 class="text-xs uppercase tracking-wider text-indigo-300 font-black"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Asistente IA</h2>
+                
+                <div id="chat-ia-respuesta" class="text-sm text-gray-300 italic hidden bg-gray-900/80 p-3 rounded-xl border border-gray-700"></div>
+                
+                <div class="flex gap-2">
+                    <input type="text" id="input-ia" placeholder="Ej: Gasté 15000 en nafta..." class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                    <button id="btn-enviar-ia" class="bg-indigo-600 text-white px-4 rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition active:scale-95">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-gray-500 text-center">Pedile que anote gastos o preguntale cómo venís con el presupuesto.</p>
+            </section>
             <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
                 <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
                 <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
@@ -204,15 +218,103 @@
         </div>
 
         <script>
+            // CREDENCIALES
             const SUPABASE_URL = "https://wyqdlihwnwhcsonyspms.supabase.co";
             const SUPABASE_KEY = "sb_publishable_6UD99xo9Z11VXHj1ie2DFg_xjPXQhe6"; 
+            const GEMINI_API_KEY = "AQ.Ab8RN6IKJn81BVpPvrgzGgvhMh13Ni7G5QdXxoMegknT-9ongg"; // Tu clave de IA
             
             const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             let tipoSeleccionado = 'Gasto';
             let mesSeleccionado = "";
+            
+            // Variables globales para que la IA pueda leer la caja actual
+            let cajaIngresos = 0;
+            let cajaGastos = 0;
+            let cajaAhorros = 0;
 
-            // --- MODIFICADO: Ahora genera los meses desde 2024 hasta 10 años en el futuro ---
+            // --- LÓGICA DE LA IA (GEMINI) ---
+            const btnIA = document.getElementById('btn-enviar-ia');
+            const inputIA = document.getElementById('input-ia');
+            const resIA = document.getElementById('chat-ia-respuesta');
+
+            async function enviarComandoIA() {
+                const texto = inputIA.value.trim();
+                if (!texto) return;
+
+                // Mostramos estado de carga
+                const iconOriginal = btnIA.innerHTML;
+                btnIA.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                btnIA.disabled = true;
+                resIA.classList.remove('hidden');
+                resIA.innerHTML = '<span class="text-indigo-400 animate-pulse"><i class="fa-solid fa-robot mr-1"></i> Pensando...</span>';
+
+                // Armamos el contexto y las reglas para la IA
+                const prompt = `
+                Sos un asistente financiero experto para una familia. Tu tarea es ayudarles a registrar movimientos o darles consejos.
+                Contexto real del mes seleccionado (${mesSeleccionado}):
+                - Ingresos totales: $${cajaIngresos}
+                - Gastos totales: $${cajaGastos}
+                - Ahorros separados: $${cajaAhorros}
+                - Disponible en mano: $${cajaIngresos - cajaGastos - cajaAhorros}
+
+                El usuario te dice o pide esto: "${texto}"
+
+                REGLA ESTRICTA 1: Si el texto indica que el usuario hizo una compra, un gasto, separó ahorro, o recibió plata (ej: "anotame", "gasté", "pagué", "me ingresó", "compré"), debes devolver ÚNICAMENTE un objeto JSON para registrar el movimiento en la base de datos.
+                Formato JSON: {"accion": "registrar", "tipo": "Gasto" o "Ingreso", "monto": (solo el numero), "categoria": (elegir una: "Gasto de Casa", "Combustible", "Fijos / Servicios", "Ahorro", "Sueldo", "Otros"), "detalle": "Resumen corto"}
+
+                REGLA ESTRICTA 2: Si el usuario te hace una pregunta, te pide proyecciones, consejos, o saber si le alcanza la plata, debes responder ÚNICAMENTE con un JSON con tu respuesta amigable.
+                Formato JSON: {"accion": "responder", "mensaje": "Tu respuesta directa acá, tratándolo de vos y siendo útil con los números reales."}
+
+                NUNCA devuelvas comillas invertidas (\`\`\`) ni la palabra json. Devuelve el texto crudo del objeto JSON.
+                `;
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: { temperature: 0.1 }
+                        })
+                    });
+
+                    const data = await response.json();
+                    let textoIA = data.candidates[0].content.parts[0].text;
+                    
+                    // Limpiamos formato por si la IA devuelve markdown
+                    textoIA = textoIA.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const resultado = JSON.parse(textoIA);
+
+                    if (resultado.accion === 'registrar') {
+                        const fechaHoy = new Date().toISOString().split('T')[0];
+                        await supabaseClient.from('movimientos').insert([{ 
+                            tipo: resultado.tipo, 
+                            monto: parseFloat(resultado.monto), 
+                            categoria: resultado.categoria, 
+                            detalle: resultado.detalle,
+                            fecha: fechaHoy
+                        }]);
+                        inputIA.value = '';
+                        resIA.innerHTML = `<span class="text-green-400 font-bold"><i class="fa-solid fa-check-circle mr-1"></i> ¡Listo! Anoté $${resultado.monto} en ${resultado.categoria}.</span>`;
+                        cargarTodo(); // Recargamos para que se refleje la plata
+                    } else if (resultado.accion === 'responder') {
+                        inputIA.value = '';
+                        resIA.innerHTML = `<span class="text-indigo-200"><i class="fa-solid fa-robot mr-1"></i> ${resultado.mensaje}</span>`;
+                    }
+                } catch (error) {
+                    console.error("Error Gemini:", error);
+                    resIA.innerHTML = '<span class="text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error al conectar con la IA. Intentá escribirlo de otra forma.</span>';
+                } finally {
+                    btnIA.innerHTML = iconOriginal;
+                    btnIA.disabled = false;
+                }
+            }
+
+            btnIA.addEventListener('click', enviarComandoIA);
+            inputIA.addEventListener('keypress', (e) => { if (e.key === 'Enter') enviarComandoIA(); });
+            // --- FIN LÓGICA IA ---
+
             function inicializarSelectorMeses() {
                 const selector = document.getElementById('select-mes-filtro');
                 const hoy = new Date();
@@ -258,7 +360,6 @@
             btnGasto.addEventListener('click', () => { tipoSeleccionado = 'Gasto'; btnGasto.className = "py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center"; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
             btnIngreso.addEventListener('click', () => { tipoSeleccionado = 'Ingreso'; btnIngreso.className = "py-2.5 rounded-xl font-bold border border-green-500 bg-green-500/10 text-green-400 text-center"; btnGasto.className = "py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center"; });
 
-            // LÓGICA PARA MOSTRAR/OCULTAR MACHETE
             document.getElementById('btn-toggle-fijos').addEventListener('click', (e) => {
                 const contFijos = document.getElementById('contenedor-fijos');
                 contFijos.classList.toggle('hidden');
@@ -298,22 +399,24 @@
                     movimientos = movimientos || []; presupuestos = presupuestos || []; fijos = fijos || [];
 
                     // --- CÁLCULO DE CAJA ---
-                    let ingresos = 0, gastos = 0, ahorros = 0, gastosPorCategoria = {};
+                    cajaIngresos = 0; cajaGastos = 0; cajaAhorros = 0; 
+                    let gastosPorCategoria = {};
+                    
                     movimientos.forEach(m => {
                         const monto = parseFloat(m.monto);
                         if (m.tipo === 'Ingreso') {
-                            ingresos += monto;
+                            cajaIngresos += monto;
                         } else { 
-                            if (m.categoria === 'Ahorro') ahorros += monto;
-                            else gastos += monto;
+                            if (m.categoria === 'Ahorro') cajaAhorros += monto;
+                            else cajaGastos += monto;
                             gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
                         }
                     });
 
-                    document.getElementById('txt-total-ingresos').innerText = fMoneda(ingresos);
-                    document.getElementById('txt-total-gastos').innerText = fMoneda(gastos);
-                    document.getElementById('txt-total-ahorros').innerText = fMoneda(ahorros);
-                    document.getElementById('txt-disponible').innerText = fMoneda(ingresos - gastos - ahorros);
+                    document.getElementById('txt-total-ingresos').innerText = fMoneda(cajaIngresos);
+                    document.getElementById('txt-total-gastos').innerText = fMoneda(cajaGastos);
+                    document.getElementById('txt-total-ahorros').innerText = fMoneda(cajaAhorros);
+                    document.getElementById('txt-disponible').innerText = fMoneda(cajaIngresos - cajaGastos - cajaAhorros);
 
                     // --- RENDER MACHETE FIJOS ---
                     const contFijos = document.getElementById('contenedor-fijos');
@@ -411,7 +514,6 @@
                 }
             }
 
-            // NUEVA FUNCIÓN: Copiar fijos del mes anterior
             window.copiarFijosAnterior = async function() {
                 try {
                     let partes = mesSeleccionado.split('-');
@@ -470,7 +572,6 @@
                 document.getElementById('input-monto-pago-fijo').focus();
             };
 
-            // FORMULARIOS
             document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const fechaHoy = new Date().toISOString().split('T')[0];
@@ -510,10 +611,8 @@
                 const montoPago = parseFloat(document.getElementById('input-monto-pago-fijo').value);
                 const fechaHoy = new Date().toISOString().split('T')[0];
 
-                // 1. Marcar en el Machete como pagado
                 await supabaseClient.from('fijos').update({ pagado: true, monto: montoPago }).eq('id', idFijo);
 
-                // 2. Cargarlo automáticamente en Movimientos (Ahorrando doble carga)
                 await supabaseClient.from('movimientos').insert([{ 
                     tipo: 'Gasto', 
                     monto: montoPago, 
