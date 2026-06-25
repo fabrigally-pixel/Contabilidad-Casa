@@ -253,8 +253,8 @@
                 resIA.classList.remove('hidden');
                 resIA.innerHTML = '<span class="text-indigo-400 animate-pulse"><i class="fa-solid fa-robot mr-1"></i> Pensando...</span>';
 
-                // Armamos el contexto y las reglas para la IA
-                const prompt = `
+                // Separamos la instrucción del sistema (las reglas) del mensaje del usuario
+                const instruccionesSistema = `
                 Sos un asistente financiero experto para una familia. Tu tarea es ayudarles a registrar movimientos o darles consejos.
                 Contexto real del mes seleccionado (${mesSeleccionado}):
                 - Ingresos totales: $${cajaIngresos}
@@ -262,10 +262,8 @@
                 - Ahorros separados: $${cajaAhorros}
                 - Disponible en mano: $${cajaIngresos - cajaGastos - cajaAhorros}
 
-                El usuario te dice o pide esto: "${texto}"
-
                 REGLA ESTRICTA 1: Si el texto indica que el usuario hizo una compra, un gasto, separó ahorro, o recibió plata (ej: "anotame", "gasté", "pagué", "me ingresó", "compré"), debes devolver ÚNICAMENTE un objeto JSON para registrar el movimiento en la base de datos.
-                Formato JSON: {"accion": "registrar", "tipo": "Gasto" o "Ingreso", "monto": (solo el numero), "categoria": (elegir una: "Gasto de Casa", "Combustible", "Fijos / Servicios", "Ahorro", "Sueldo", "Otros"), "detalle": "Resumen corto"}
+                Formato JSON: {"accion": "registrar", "tipo": "Gasto" o "Ingreso", "monto": (solo el numero entero), "categoria": (elegir una: "Gasto de Casa", "Combustible", "Fijos / Servicios", "Ahorro", "Sueldo", "Otros"), "detalle": "Resumen corto"}
 
                 REGLA ESTRICTA 2: Si el usuario te hace una pregunta, te pide proyecciones, consejos, o saber si le alcanza la plata, debes responder ÚNICAMENTE con un JSON con tu respuesta amigable.
                 Formato JSON: {"accion": "responder", "mensaje": "Tu respuesta directa acá, tratándolo de vos y siendo útil con los números reales."}
@@ -274,26 +272,38 @@
                 `;
 
                 try {
-                    // --- ACÁ ESTÁ EL CAMBIO A GEMINI PRO LATEST ---
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    // --- PETICIÓN FORMATEADA PARA MODELOS NUEVOS ---
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: { temperature: 0.1 }
+                            // Instrucciones del sistema en su lugar correspondiente
+                            system_instruction: {
+                                parts: [{ text: instruccionesSistema }]
+                            },
+                            // El mensaje del usuario va en contents
+                            contents: [{ 
+                                role: "user",
+                                parts: [{ text: texto }] 
+                            }],
+                            generationConfig: { 
+                                temperature: 0.1,
+                                // Obligamos a que devuelva un JSON
+                                response_mime_type: "application/json" 
+                            }
                         })
                     });
 
                     const data = await response.json();
 
-                    // --- SALVAVIDAS: Si Google devuelve un error, frenamos acá ---
+                    // --- SALVAVIDAS: Manejo de errores de la API ---
                     if (!response.ok) {
+                        console.error("Detalle del error de Google:", data.error);
                         throw new Error("Error de API: " + (data.error?.message || "Desconocido"));
                     }
 
-                    // Limpiamos formato por si la IA devuelve markdown
+                    // Obtenemos el texto de la IA (que ahora está garantizado que es JSON)
                     let textoIA = data.candidates[0].content.parts[0].text;
-                    textoIA = textoIA.replace(/```json/g, '').replace(/```/g, '').trim();
                     const resultado = JSON.parse(textoIA);
 
                     if (resultado.accion === 'registrar') {
@@ -313,8 +323,8 @@
                         resIA.innerHTML = `<span class="text-indigo-200"><i class="fa-solid fa-robot mr-1"></i> ${resultado.mensaje}</span>`;
                     }
                 } catch (error) {
-                    console.error("Error Gemini:", error);
-                    resIA.innerHTML = '<span class="text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error al conectar con la IA. Intentá escribirlo de otra forma.</span>';
+                    console.error("Error capturado:", error);
+                    resIA.innerHTML = '<span class="text-red-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Error al procesar. Revisá la consola (F12).</span>';
                 } finally {
                     btnIA.innerHTML = iconOriginal;
                     btnIA.disabled = false;
