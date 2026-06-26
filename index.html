@@ -49,12 +49,12 @@
                     <button id="btn-mic-ia" type="button" class="bg-gray-700 text-gray-300 px-4 rounded-xl shadow-lg hover:bg-gray-600 transition active:scale-95" title="Hablar">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
-                    <input type="text" id="input-ia" placeholder="Ej: Gasté 15000 en nafta..." class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                    <input type="text" id="input-ia" placeholder="Ej: ¿Ya pagué Enersa? o Borrá la nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition">
                     <button id="btn-enviar-ia" type="button" class="bg-indigo-600 text-white px-4 rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition active:scale-95">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
-                <p class="text-[10px] text-gray-500 text-center">Pedile que anote gastos o preguntale cómo venís con el presupuesto.</p>
+                <p class="text-[10px] text-gray-500 text-center">Pedile que anote gastos, borre registros o analice tus cuentas.</p>
             </section>
             
             <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
@@ -232,10 +232,12 @@
             let tipoSeleccionado = 'Gasto';
             let mesSeleccionado = "";
             
-            // Variables globales para que la IA pueda leer la caja actual
+            // Variables globales para que la IA pueda leer la caja actual y las listas
             let cajaIngresos = 0;
             let cajaGastos = 0;
             let cajaAhorros = 0;
+            let listaMovimientosMes = [];
+            let listaFijosMes = [];
 
             // --- LÓGICA DE LA IA (GEMINI) ---
             const btnIA = document.getElementById('btn-enviar-ia');
@@ -253,42 +255,53 @@
                 resIA.classList.remove('hidden');
                 resIA.innerHTML = '<span class="text-indigo-400 animate-pulse"><i class="fa-solid fa-robot mr-1"></i> Pensando...</span>';
 
-                // Separamos la instrucción del sistema (las reglas) del mensaje del usuario
+                // Formateamos las listas en texto para que el contador las entienda
+                let textoFijos = listaFijosMes.map(f => `- [ID: ${f.id}] ${f.nombre} (${f.pagado ? 'Pagado: $' + f.monto : 'Pendiente'})`).join('\n');
+                if (!textoFijos) textoFijos = "No hay servicios anotados.";
+
+                let textoMovimientos = listaMovimientosMes.slice(0, 20).map(m => `- [ID: ${m.id}] ${m.fecha}: ${m.tipo} de $${m.monto} en ${m.categoria}. Detalle: ${m.detalle}`).join('\n');
+                if (!textoMovimientos) textoMovimientos = "No hay movimientos registrados.";
+
+                // Instrucciones del sistema (El cerebro del Contador)
                 const instruccionesSistema = `
-                Sos un asistente financiero experto para una familia. Tu tarea es ayudarles a registrar movimientos o darles consejos.
+                Sos un contador profesional y asistente financiero experto para nuestra familia ubicada en Paraná, Entre Ríos. Tu tarea es administrar la economía de la casa, registrar movimientos, y dar consejos financieros precisos y analíticos basados en los datos reales.
+                
                 Contexto real del mes seleccionado (${mesSeleccionado}):
                 - Ingresos totales: $${cajaIngresos}
                 - Gastos totales: $${cajaGastos}
-                - Ahorros separados: $${cajaAhorros}
+                - Ahorros: $${cajaAhorros}
                 - Disponible en mano: $${cajaIngresos - cajaGastos - cajaAhorros}
 
-                REGLA ESTRICTA 1: Si el texto indica que el usuario hizo una compra, un gasto, separó ahorro, o recibió plata (ej: "anotame", "gasté", "pagué", "me ingresó", "compré"), debes devolver ÚNICAMENTE un objeto JSON para registrar el movimiento en la base de datos.
-                Formato JSON: {"accion": "registrar", "tipo": "Gasto" o "Ingreso", "monto": (solo el numero entero), "categoria": (elegir una: "Gasto de Casa", "Combustible", "Fijos / Servicios", "Ahorro", "Sueldo", "Otros"), "detalle": "Resumen corto"}
+                Servicios Fijos de este mes (Machete):
+                ${textoFijos}
 
-                REGLA ESTRICTA 2: Si el usuario te hace una pregunta, te pide proyecciones, consejos, o saber si le alcanza la plata, debes responder ÚNICAMENTE con un JSON con tu respuesta amigable.
-                Formato JSON: {"accion": "responder", "mensaje": "Tu respuesta directa acá, tratándolo de vos y siendo útil con los números reales."}
+                Últimos movimientos de este mes (Máx 20 para contexto):
+                ${textoMovimientos}
 
-                NUNCA devuelvas comillas invertidas (\`\`\`) ni la palabra json. Devuelve el texto crudo del objeto JSON.
+                REGLA 1 (REGISTRAR): Si el usuario indica que hizo un gasto, ingreso o ahorro nuevo (ej: "gasté 5000 en carne", "me pagaron 100000"), devuelve ÚNICAMENTE este JSON:
+                {"accion": "registrar", "tipo": "Gasto" o "Ingreso", "monto": (solo numero), "categoria": (elegir una: "Gasto de Casa", "Combustible", "Fijos / Servicios", "Ahorro", "Sueldo", "Otros"), "detalle": "Resumen corto"}
+
+                REGLA 2 (BORRAR): Si el usuario te pide borrar o eliminar un movimiento específico (ej: "borrá el gasto de la carnicería", "eliminá la nafta"), busca el ID correspondiente en la lista de "Últimos movimientos" y devuelve ÚNICAMENTE este JSON:
+                {"accion": "borrar_movimiento", "id": "el-id-del-movimiento-encontrado", "mensaje": "Mensaje amigable confirmando qué borraste"}
+
+                REGLA 3 (RESPONDER/ANALIZAR): Si el usuario hace una pregunta, pide proyecciones, consejos, pregunta si ya pagó un servicio (revisa la lista de Fijos), o quiere saber si le alcanza la plata, actúa como un contador analítico. Devuelve ÚNICAMENTE este JSON:
+                {"accion": "responder", "mensaje": "Tu respuesta directa y profesional acá, tratándolo de vos y siendo súper útil con los números reales. Usa etiquetas HTML (<b>, <br>) si necesitas armar un listadito corto en tu respuesta."}
                 `;
 
                 try {
-                    // --- PETICIÓN FORMATEADA PARA MODELOS NUEVOS ---
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            // Instrucciones del sistema en su lugar correspondiente
                             system_instruction: {
                                 parts: [{ text: instruccionesSistema }]
                             },
-                            // El mensaje del usuario va en contents
                             contents: [{ 
                                 role: "user",
                                 parts: [{ text: texto }] 
                             }],
                             generationConfig: { 
                                 temperature: 0.1,
-                                // Obligamos a que devuelva un JSON
                                 response_mime_type: "application/json" 
                             }
                         })
@@ -296,13 +309,11 @@
 
                     const data = await response.json();
 
-                    // --- SALVAVIDAS: Manejo de errores de la API ---
                     if (!response.ok) {
                         console.error("Detalle del error de Google:", data.error);
                         throw new Error("Error de API: " + (data.error?.message || "Desconocido"));
                     }
 
-                    // Obtenemos el texto de la IA (que ahora está garantizado que es JSON)
                     let textoIA = data.candidates[0].content.parts[0].text;
                     const resultado = JSON.parse(textoIA);
 
@@ -317,10 +328,15 @@
                         }]);
                         inputIA.value = '';
                         resIA.innerHTML = `<span class="text-green-400 font-bold"><i class="fa-solid fa-check-circle mr-1"></i> ¡Listo! Anoté $${resultado.monto} en ${resultado.categoria}.</span>`;
-                        cargarTodo(); // Recargamos para que se refleje la plata
+                        cargarTodo();
+                    } else if (resultado.accion === 'borrar_movimiento') {
+                        await supabaseClient.from('movimientos').delete().eq('id', resultado.id);
+                        inputIA.value = '';
+                        resIA.innerHTML = `<span class="text-green-400 font-bold"><i class="fa-solid fa-trash mr-1"></i> ${resultado.mensaje}</span>`;
+                        cargarTodo();
                     } else if (resultado.accion === 'responder') {
                         inputIA.value = '';
-                        resIA.innerHTML = `<span class="text-indigo-200"><i class="fa-solid fa-robot mr-1"></i> ${resultado.mensaje}</span>`;
+                        resIA.innerHTML = `<span class="text-indigo-200"><i class="fa-solid fa-user-tie mr-1"></i> ${resultado.mensaje}</span>`;
                     }
                 } catch (error) {
                     console.error("Error capturado:", error);
@@ -360,7 +376,7 @@
                     btnMic.classList.replace('bg-red-500', 'bg-gray-700');
                     btnMic.classList.replace('text-white', 'text-gray-300');
                     btnMic.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-                    inputIA.placeholder = "Ej: Gasté 15000 en nafta...";
+                    inputIA.placeholder = "Ej: ¿Ya pagué Enersa? o Borrá la nafta";
                 };
 
                 reconocimiento.onerror = function(event) {
@@ -458,6 +474,10 @@
                     if(errM) throw errM;
 
                     movimientos = movimientos || []; presupuestos = presupuestos || []; fijos = fijos || [];
+
+                    // --- GUARDAMOS LAS LISTAS PARA QUE LA IA LAS VEA ---
+                    listaMovimientosMes = movimientos;
+                    listaFijosMes = fijos;
 
                     // --- CÁLCULO DE CAJA ---
                     cajaIngresos = 0; cajaGastos = 0; cajaAhorros = 0; 
