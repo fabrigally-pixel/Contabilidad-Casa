@@ -49,30 +49,33 @@
                     <button id="btn-mic-ia" type="button" class="bg-gray-700 text-gray-300 px-4 rounded-xl shadow-lg hover:bg-gray-600 transition active:scale-95" title="Hablar">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
-                    <input type="text" id="input-ia" placeholder="Ej: ¿Ya pagué Enersa? o Borrá la nafta" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                    <input type="text" id="input-ia" placeholder="Ej: Guardá 100 mil en ahorro" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500 transition">
                     <button id="btn-enviar-ia" type="button" class="bg-indigo-600 text-white px-4 rounded-xl font-bold shadow-lg hover:bg-indigo-500 transition active:scale-95">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
-                <p class="text-[10px] text-gray-500 text-center">Pedile que anote gastos, borre registros o analice tus cuentas.</p>
+                <p class="text-[10px] text-gray-500 text-center">Pedile que anote gastos, rescate ahorros o analice tus cuentas.</p>
             </section>
             
             <section class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl text-center">
                 <p class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Disponible en Mano</p>
-                <p class="text-4xl font-black text-white mb-4 tracking-tight" id="txt-disponible">$0</p>
+                <p class="text-4xl font-black text-white mb-1 tracking-tight" id="txt-disponible">$0</p>
                 
-                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-700">
+                <!-- Cartel de Arrastre Inteligente (Positivo o Negativo) -->
+                <div id="wrapper-arrastre" class="hidden mb-4 mt-2"></div>
+                
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-gray-700 mt-2">
                     <div>
-                        <p class="text-[11px] text-gray-400 font-medium">Ingresó</p>
+                        <p class="text-[11px] text-gray-400 font-medium">Ingresó el mes</p>
                         <p class="text-sm font-bold text-green-400 mt-0.5" id="txt-total-ingresos">$0</p>
                     </div>
                     <div class="border-l border-gray-700">
-                        <p class="text-[11px] text-gray-400 font-medium">Salió</p>
+                        <p class="text-[11px] text-gray-400 font-medium">Salió el mes</p>
                         <p class="text-sm font-bold text-red-400 mt-0.5" id="txt-total-gastos">$0</p>
                     </div>
-                    <div class="border-l border-gray-700">
-                        <p class="text-[11px] text-gray-400 font-medium">Ahorro</p>
-                        <p class="text-sm font-bold text-indigo-400 mt-0.5" id="txt-total-ahorros">$0</p>
+                    <div class="border-l border-gray-700 bg-indigo-500/10 rounded-r-xl">
+                        <p class="text-[11px] text-indigo-300 font-bold">Caja Ahorros</p>
+                        <p class="text-sm font-black text-indigo-400 mt-0.5" id="txt-total-ahorros">$0</p>
                     </div>
                 </div>
             </section>
@@ -133,8 +136,8 @@
                 </div>
                 <form id="form-movimiento" class="space-y-4">
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="btn-tipo-gasto" class="py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center">Gasto</button>
-                        <button type="button" id="btn-tipo-ingreso" class="py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center">Ingreso</button>
+                        <button type="button" id="btn-tipo-gasto" class="py-2.5 rounded-xl font-bold border border-red-500 bg-red-500/10 text-red-400 text-center">Gasto (Salió)</button>
+                        <button type="button" id="btn-tipo-ingreso" class="py-2.5 rounded-xl font-bold border border-gray-700 bg-transparent text-gray-400 text-center">Ingreso (Entró)</button>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-400 mb-1">Monto ($)</label>
@@ -146,10 +149,11 @@
                             <option value="Gasto de Casa">🏠 Gasto de Casa</option>
                             <option value="Combustible">🚗 Combustible</option>
                             <option value="Fijos / Servicios">📄 Fijos / Servicios</option>
-                            <option value="Ahorro">🐷 Ahorro</option>
+                            <option value="Ahorro">🐷 Ahorro (Caja Fuerte)</option>
                             <option value="Sueldo">💰 Ingreso / Sueldo</option>
                             <option value="Otros">💡 Otros</option>
                         </select>
+                        <p class="text-[10px] text-gray-500 mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Para sacar plata de ahorros: Marcá Ingreso + Categoría Ahorro.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-400 mb-1">Nota / Detalle corto</label>
@@ -235,9 +239,20 @@
             // Variables globales para que la IA pueda leer la caja actual y las listas
             let cajaIngresos = 0;
             let cajaGastos = 0;
-            let cajaAhorros = 0;
+            let ahorroTotal = 0; // NUEVO: Acumulado de por vida
+            let saldoArrastre = 0; // NUEVO: Plata a favor o en contra de meses anteriores
+            let disponibleFinal = 0; // NUEVO: Lo que tenés en mano real
             let listaMovimientosMes = [];
             let listaFijosMes = [];
+
+            // --- NUEVA FUNCIÓN: FECHA INTELIGENTE ---
+            function obtenerFechaRegistro() {
+                const hoy = new Date().toISOString().split('T')[0];
+                if (hoy.substring(0, 7) !== mesSeleccionado) {
+                    return mesSeleccionado + '-01'; 
+                }
+                return hoy;
+            }
 
             // --- LÓGICA DE LA IA (GEMINI) ---
             const btnIA = document.getElementById('btn-enviar-ia');
@@ -262,15 +277,16 @@
                 let textoMovimientos = listaMovimientosMes.slice(0, 20).map(m => `- [ID: ${m.id}] ${m.fecha}: ${m.tipo} de $${m.monto} en ${m.categoria}. Detalle: ${m.detalle}`).join('\n');
                 if (!textoMovimientos) textoMovimientos = "No hay movimientos registrados.";
 
-                // Instrucciones del sistema (El cerebro del Contador)
+                // Instrucciones del sistema (El cerebro del Contador actualizado)
                 const instruccionesSistema = `
                 Sos un contador profesional y asistente financiero experto para nuestra familia ubicada en Paraná, Entre Ríos. Tu tarea es administrar la economía de la casa, registrar movimientos, y dar consejos financieros precisos y analíticos basados en los datos reales.
                 
                 Contexto real del mes seleccionado (${mesSeleccionado}):
-                - Ingresos totales: $${cajaIngresos}
-                - Gastos totales: $${cajaGastos}
-                - Ahorros: $${cajaAhorros}
-                - Disponible en mano: $${cajaIngresos - cajaGastos - cajaAhorros}
+                - Ingresos del mes: $${cajaIngresos}
+                - Gastos del mes: $${cajaGastos}
+                - Saldo arrastrado de meses anteriores (positivo es a favor, negativo es deuda): $${saldoArrastre}
+                - AHORRO TOTAL ACUMULADO (Caja Fuerte): $${ahorroTotal}
+                - Disponible en mano REAL actual: $${disponibleFinal}
 
                 Servicios Fijos de este mes (Machete):
                 ${textoFijos}
@@ -278,8 +294,10 @@
                 Últimos movimientos de este mes (Máx 20 para contexto):
                 ${textoMovimientos}
 
-                REGLA 1 (REGISTRAR): Si el usuario indica que hizo un gasto, ingreso o ahorro nuevo (ej: "gasté 5000 en carne", "me pagaron 100000"), devuelve ÚNICAMENTE este JSON:
+                REGLA 1 (REGISTRAR): Si el usuario indica que hizo un gasto o ingreso, devuelve ÚNICAMENTE este JSON:
                 {"accion": "registrar", "tipo": "Gasto" o "Ingreso", "monto": (solo numero), "categoria": (elegir una: "Gasto de Casa", "Combustible", "Fijos / Servicios", "Ahorro", "Sueldo", "Otros"), "detalle": "Resumen corto"}
+                - ATENCIÓN: Si el usuario dice que "guardó", "separó" o "ahorró" plata, es tipo "Gasto" y categoría "Ahorro".
+                - ATENCIÓN: Si el usuario dice que "sacó plata de los ahorros", "usó de los ahorros" o "rescató", es tipo "Ingreso" y categoría "Ahorro".
 
                 REGLA 2 (BORRAR): Si el usuario te pide borrar o eliminar un movimiento específico (ej: "borrá el gasto de la carnicería", "eliminá la nafta"), busca el ID correspondiente en la lista de "Últimos movimientos" y devuelve ÚNICAMENTE este JSON:
                 {"accion": "borrar_movimiento", "id": "el-id-del-movimiento-encontrado", "mensaje": "Mensaje amigable confirmando qué borraste"}
@@ -318,7 +336,7 @@
                     const resultado = JSON.parse(textoIA);
 
                     if (resultado.accion === 'registrar') {
-                        const fechaHoy = new Date().toISOString().split('T')[0];
+                        const fechaHoy = obtenerFechaRegistro(); // USAMOS FECHA INTELIGENTE
                         await supabaseClient.from('movimientos').insert([{ 
                             tipo: resultado.tipo, 
                             monto: parseFloat(resultado.monto), 
@@ -473,31 +491,75 @@
                         .order('created_at', { ascending: false });
                     if(errM) throw errM;
 
+                    // --- CÁLCULO HISTÓRICO GLOBAL (TODO LO ANTERIOR A ESTE MES) ---
+                    let { data: movsAnt } = await supabaseClient.from('movimientos')
+                        .select('tipo, monto, categoria')
+                        .lt('fecha', primerDia);
+                        
+                    saldoArrastre = 0; 
+                    let ahorroHistorico = 0;
+                    
+                    if (movsAnt && movsAnt.length > 0) {
+                        let iHist = 0, gHist = 0, ahInHist = 0, ahOutHist = 0;
+                        movsAnt.forEach(m => {
+                            let val = parseFloat(m.monto);
+                            if (m.tipo === 'Ingreso') {
+                                if (m.categoria === 'Ahorro') ahOutHist += val; // Sacó plata del ahorro (Ingreso de Ahorro)
+                                else iHist += val; // Ingreso normal
+                            } else {
+                                if (m.categoria === 'Ahorro') ahInHist += val; // Metió plata al ahorro (Gasto de Ahorro)
+                                else gHist += val; // Gasto normal
+                            }
+                        });
+                        ahorroHistorico = ahInHist - ahOutHist;
+                        saldoArrastre = iHist + ahOutHist - gHist - ahInHist; 
+                    }
+
                     movimientos = movimientos || []; presupuestos = presupuestos || []; fijos = fijos || [];
 
                     // --- GUARDAMOS LAS LISTAS PARA QUE LA IA LAS VEA ---
                     listaMovimientosMes = movimientos;
                     listaFijosMes = fijos;
 
-                    // --- CÁLCULO DE CAJA ---
-                    cajaIngresos = 0; cajaGastos = 0; cajaAhorros = 0; 
+                    // --- CÁLCULO DE CAJA DEL MES ACTUAL ---
+                    cajaIngresos = 0; cajaGastos = 0; 
+                    let cajaAhorrosIn = 0; let cajaAhorrosOut = 0;
                     let gastosPorCategoria = {};
                     
                     movimientos.forEach(m => {
                         const monto = parseFloat(m.monto);
                         if (m.tipo === 'Ingreso') {
-                            cajaIngresos += monto;
+                            if (m.categoria === 'Ahorro') cajaAhorrosOut += monto; // Extrajo de ahorros
+                            else cajaIngresos += monto; // Ingreso regular
                         } else { 
-                            if (m.categoria === 'Ahorro') cajaAhorros += monto;
-                            else cajaGastos += monto;
-                            gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
+                            if (m.categoria === 'Ahorro') cajaAhorrosIn += monto; // Guardó en ahorros
+                            else {
+                                cajaGastos += monto; // Gasto regular
+                                gastosPorCategoria[m.categoria] = (gastosPorCategoria[m.categoria] || 0) + monto;
+                            }
                         }
                     });
 
+                    // CÁLCULOS FINALES PARA PANTALLA
+                    ahorroTotal = ahorroHistorico + cajaAhorrosIn - cajaAhorrosOut;
+                    disponibleFinal = saldoArrastre + cajaIngresos + cajaAhorrosOut - cajaGastos - cajaAhorrosIn;
+
                     document.getElementById('txt-total-ingresos').innerText = fMoneda(cajaIngresos);
                     document.getElementById('txt-total-gastos').innerText = fMoneda(cajaGastos);
-                    document.getElementById('txt-total-ahorros').innerText = fMoneda(cajaAhorros);
-                    document.getElementById('txt-disponible').innerText = fMoneda(cajaIngresos - cajaGastos - cajaAhorros);
+                    document.getElementById('txt-total-ahorros').innerText = fMoneda(ahorroTotal);
+                    document.getElementById('txt-disponible').innerText = fMoneda(disponibleFinal);
+
+                    // --- CARTEL DE ARRASTRE ---
+                    const divArrastre = document.getElementById('wrapper-arrastre');
+                    if (saldoArrastre !== 0) {
+                        divArrastre.classList.remove('hidden');
+                        let colorClass = saldoArrastre > 0 ? 'text-green-400 bg-green-500/10 border-green-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20';
+                        let iconClass = saldoArrastre > 0 ? 'fa-piggy-bank' : 'fa-triangle-exclamation';
+                        divArrastre.innerHTML = `<span class="text-[10px] font-bold px-3 py-1 rounded-full border ${colorClass}"><i class="fa-solid ${iconClass} mr-1"></i>Arrastre anterior: ${saldoArrastre > 0 ? '+' : '-'}$${fMoneda(Math.abs(saldoArrastre))}</span>`;
+                    } else {
+                        divArrastre.classList.add('hidden');
+                        divArrastre.innerHTML = '';
+                    }
 
                     // --- RENDER MACHETE FIJOS ---
                     const contFijos = document.getElementById('contenedor-fijos');
@@ -655,7 +717,7 @@
 
             document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const fechaHoy = new Date().toISOString().split('T')[0];
+                const fechaHoy = obtenerFechaRegistro(); // USAMOS FECHA INTELIGENTE
                 await supabaseClient.from('movimientos').insert([{ 
                     tipo: tipoSeleccionado, 
                     monto: parseFloat(document.getElementById('input-monto').value), 
@@ -690,7 +752,7 @@
                 const idFijo = document.getElementById('hidden-id-fijo').value;
                 const nombreFijo = document.getElementById('hidden-nombre-fijo').value;
                 const montoPago = parseFloat(document.getElementById('input-monto-pago-fijo').value);
-                const fechaHoy = new Date().toISOString().split('T')[0];
+                const fechaHoy = obtenerFechaRegistro(); // USAMOS FECHA INTELIGENTE
 
                 await supabaseClient.from('fijos').update({ pagado: true, monto: montoPago }).eq('id', idFijo);
 
